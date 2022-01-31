@@ -42,7 +42,7 @@ Reference implementation of the UDF integration can be found in the https://gith
 |`cargo`|any|optional|An opaque JSON carried from and to the host service|
 
 <a name="filemetadata"></a>
-#### File metadata schema:
+### File metadata schema
 
 |field|type|required|description|
 |-----|----|--------|-----------|

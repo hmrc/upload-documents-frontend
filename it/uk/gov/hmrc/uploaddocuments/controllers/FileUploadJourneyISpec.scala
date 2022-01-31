@@ -333,7 +333,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /initialize-upscan/:uploadId" should {
+    "POST /initiate-upscan/:uploadId" should {
       "initialise first file upload" in {
         val state = UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
@@ -345,7 +345,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
-        val result = await(request("/initialize-upscan/001").post(""))
+        val result = await(request("/initiate-upscan/001").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]
@@ -415,7 +415,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
-        val result = await(request("/initialize-upscan/002").post(""))
+        val result = await(request("/initiate-upscan/002").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]

@@ -16,7 +16,7 @@ GET        /choose-files                                            @uk.gov.hmrc
 GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseFile
 
 + nocsrf
-POST       /initialize-upscan/:uploadId                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
+POST       /initiate-upscan/:uploadId                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
 
 GET        /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejected
 + nocsrf

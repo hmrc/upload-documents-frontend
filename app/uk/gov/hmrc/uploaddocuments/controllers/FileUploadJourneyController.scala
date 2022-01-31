@@ -159,7 +159,7 @@ class FileUploadJourneyController @Inject() (
       .applyWithRequest(implicit request => Transitions.toUploadMultipleFiles(preferUploadMultipleFiles))
       .redirectOrDisplayIf[State.UploadMultipleFiles]
 
-  // POST /initialize-upscan/:uploadId
+  // POST /initiate-upscan/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest { implicit request =>

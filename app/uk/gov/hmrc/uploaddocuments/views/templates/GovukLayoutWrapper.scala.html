@@ -27,6 +27,9 @@
 @import uk.gov.hmrc.uploaddocuments.controllers.routes.SignOutController
 @import uk.gov.hmrc.hmrcfrontend.views.Aliases.UserResearchBanner
 @import uk.gov.hmrc.uploaddocuments.models.CustomizedServiceContent
+@import uk.gov.hmrc.hmrcfrontend.views.html.components.HmrcReportTechnicalIssue
+@import uk.gov.hmrc.hmrcfrontend.config.ContactFrontendConfig
+@import uk.gov.hmrc.hmrcfrontend.views.Aliases.{Cy, En, ReportTechnicalIssue}
 
 
 @this(
@@ -39,7 +42,9 @@ hmrcStandardHeader: HmrcStandardHeader,
 hmrcStandardFooter: HmrcStandardFooter,
 standardBetaBanner:StandardBetaBanner,
 standardAlphaBanner:StandardAlphaBanner,
-languageSelection: components.languageSelection
+languageSelection: components.languageSelection,
+hmrcReportTechnicalIssue: HmrcReportTechnicalIssue, 
+contactFrontendConfig: ContactFrontendConfig
 )
 
 @(pageTitle: Option[String] = None, timeout: Boolean = true, js: Option[Html] = None, backLink: Option[String] =
@@ -94,9 +99,16 @@ None, refresh: Int = 0)(contentBlock: Html)(implicit request: Request[_], messag
     @contentBlock
   </div>
 
-  <div class="report-a-problem">
-    @hmrcReportTechnicalIssueHelper()
-  </div>
+  @serviceContent.contactFrontendServiceId.orElse(contactFrontendConfig.serviceId).map{ serviceId =>
+    <div class="report-a-problem">
+      @hmrcReportTechnicalIssue(ReportTechnicalIssue(
+          serviceId = serviceId,
+          language = if(messages.lang.code == "cy") Cy else En,
+          referrerUrl = contactFrontendConfig.referrerUrl,
+          baseUrl = contactFrontendConfig.baseUrl
+      ))
+    </div>
+  }
 }
 
 @govukLayout(

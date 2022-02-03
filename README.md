@@ -142,6 +142,7 @@ Minimal payload example:
 |`showLanguageSelection`|boolean|optional|Whether to show language change link in the UDF|
 |`pageTitleClasses`|string|optional|Customized page heading classes|
 |`allowedFilesTypesHint`|string|optional|A hint text to display for invalid uploads|
+|`contactFrontendServiceId`|string|optional|A `serviceId` for HmrcReportTechnicalIssue component|
 
 <a name="api-initialize-payload-config-features"></a>
 #### Customized session content schema:

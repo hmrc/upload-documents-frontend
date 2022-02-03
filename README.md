@@ -159,15 +159,23 @@ Requires an `Authorization` and `X-Session-ID` headers, usually supplied transpa
 
 Returns `204 NoContent`.
 
-## Running the tests
+## Development
+
+### Prerequisites
+
+- JDK >= 1.8
+- SBT 1.x (1.6.1)
+- NODEJS 16.13.2
+
+### Running the tests
 
     sbt test it:test
 
-## Running the tests with coverage
+### Running the tests with coverage
 
     sbt clean coverageOn test it:test coverageReport
 
-## Running the app locally
+### Running the app locally
 
     sm --start UPLOAD_DOCUMENTS_ALL
     sm --stop UPLOAD_DOCUMENTS_FRONTEND 
@@ -177,7 +185,7 @@ It should then be listening on port 10100
 
     browse http://localhost:10100/upload-documents
 
-### License
+## License
 
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")

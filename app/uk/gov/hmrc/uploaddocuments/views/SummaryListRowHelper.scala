@@ -16,15 +16,11 @@
 
 package uk.gov.hmrc.uploaddocuments.views
 
-import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
-import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.{Key, Value}
-import play.api.mvc.Call
-import uk.gov.hmrc.govukfrontend.views.viewmodels.content.{Empty, Text}
-import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
-import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.Actions
-import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.ActionItem
 import play.api.i18n.Messages
+import play.api.mvc.Call
 import play.twirl.api.HtmlFormat
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.{HtmlContent, Text}
+import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.{ActionItem, Actions, Key, SummaryListRow, Value}
 
 trait SummaryListRowHelper {
 
@@ -51,7 +47,7 @@ trait SummaryListRowHelper {
             else value}</a>"
           else
             s"${if (escape) HtmlFormat.escape(value) else value}"} 
-          ${line2.getOrElse(Empty)}
+          ${line2.getOrElse("")}
           """
         ),
         classes = valueClasses.getOrElse("govuk-!-width-two-thirds")

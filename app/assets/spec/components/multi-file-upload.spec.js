@@ -1,4 +1,4 @@
-import {MultiFileUpload} from '../../javascripts/components/multi-file-upload';
+import { MultiFileUpload } from '../../javascripts/components/multi-file-upload';
 
 function createFileList(files) {
   const dt = new DataTransfer();
@@ -62,6 +62,7 @@ describe('Multi File Upload component', () => {
                     <input class="multi-file-upload__file govuk-file-upload" type="file" id="file-{fileIndex}">
                     <span class="multi-file-upload__file-name"></span>
                     <a class="multi-file-upload__file-preview"></a>
+                    <span class="multi-file-upload__description"></span>
                   </div>
             
                   <div class="multi-file-upload__meta-container">
@@ -188,7 +189,7 @@ describe('Multi File Upload component', () => {
 
           spyOn(instance, 'uploadFile');
 
-          input.files = createFileList([new File([''], '/path/to/test.txt')]);
+          input.files = createFileList([new File(['f'], '/path/to/test.txt')]);
           input.dispatchEvent(new Event('change'));
           done();
         });
@@ -254,7 +255,7 @@ describe('Multi File Upload component', () => {
             return promise;
           });
 
-          input.files = createFileList([new File([''], '/path/to/test.txt')]);
+          input.files = createFileList([new File(['f'], '/path/to/test.txt')]);
           input.dispatchEvent(new Event('change'));
           done();
         });

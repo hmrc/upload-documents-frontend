@@ -28,6 +28,7 @@ export class MultiFileUpload extends Component {
       startRows: parseInt(form.dataset.multiFileUploadStartRows) || 1,
       minFiles: parseInt(form.dataset.multiFileUploadMinFiles),
       maxFiles: parseInt(form.dataset.multiFileUploadMaxFiles) || 100,
+      maxFileSize: parseInt(form.dataset.multiFileUploadMaxFileSize),
       uploadedFiles: form.dataset.multiFileUploadUploadedFiles ? JSON.parse(form.dataset.multiFileUploadUploadedFiles) : [],
       retryDelayMs: parseInt(form.dataset.multiFileUploadRetryDelayMs, 10) || 1000,
       maxRetries: parseInt(form.dataset.multiFileUploadMaxRetries) || 30,
@@ -44,6 +45,9 @@ export class MultiFileUpload extends Component {
       stillTransferring: form.dataset.multiFileUploadStillTransferring,
       documentUploaded: form.dataset.multiFileUploadDocumentUploaded,
       documentDeleted: form.dataset.multiFileUploadDocumentDeleted,
+      invalidSizeLargeError: form.dataset.multiFileUploadErrorInvalidSizeLarge,
+      invalidSizeSmallError: form.dataset.multiFileUploadErrorInvalidSizeSmall,
+      invalidTypeError: form.dataset.multiFileUploadErrorInvalidType,
     };
 
     this.classes = {
@@ -320,6 +324,23 @@ export class MultiFileUpload extends Component {
     }
 
     const file = this.getFileFromItem(nextItem);
+    const fileMetaData = file.files[0];
+
+    if (this.config.maxFileSize && fileMetaData.size && fileMetaData.size > this.config.maxFileSize) {
+      this.setItemState(nextItem, UploadState.Default);
+      this.updateFormStatusVisibility();
+      this.errorManager.addError(file.id, this.messages.invalidSizeLargeError);
+      this.errorManager.focusSummary();
+      return;
+    }
+
+    if (fileMetaData.size === 0) {
+      this.setItemState(nextItem, UploadState.Default);
+      this.updateFormStatusVisibility();
+      this.errorManager.addError(file.id, this.messages.invalidSizeSmallError);
+      this.errorManager.focusSummary();
+      return;
+    }
 
     this.setItemState(nextItem, UploadState.Uploading);
     this.provisionUpload(file);

@@ -311,6 +311,22 @@ export class MultiFileUpload extends Component {
       return;
     }
 
+    const fileMetaData = file.files[0];
+
+    if (this.config.maxFileSize && fileMetaData.size && fileMetaData.size > this.config.maxFileSize) {
+      this.setItemState(item, UploadState.Default);
+      this.updateFormStatusVisibility();
+      this.errorManager.addError(file.id, this.messages.invalidSizeLargeError);
+      return;
+    }
+
+    if (fileMetaData.size === 0) {
+      this.setItemState(item, UploadState.Default);
+      this.updateFormStatusVisibility();
+      this.errorManager.addError(file.id, this.messages.invalidSizeSmallError);
+      return;
+    }
+
     this.getFileNameElement(item).textContent = this.extractFileName(file.value);
     this.setItemState(item, UploadState.Waiting);
     this.uploadNext();
@@ -324,23 +340,6 @@ export class MultiFileUpload extends Component {
     }
 
     const file = this.getFileFromItem(nextItem);
-    const fileMetaData = file.files[0];
-
-    if (this.config.maxFileSize && fileMetaData.size && fileMetaData.size > this.config.maxFileSize) {
-      this.setItemState(nextItem, UploadState.Default);
-      this.updateFormStatusVisibility();
-      this.errorManager.addError(file.id, this.messages.invalidSizeLargeError);
-      this.errorManager.focusSummary();
-      return;
-    }
-
-    if (fileMetaData.size === 0) {
-      this.setItemState(nextItem, UploadState.Default);
-      this.updateFormStatusVisibility();
-      this.errorManager.addError(file.id, this.messages.invalidSizeSmallError);
-      this.errorManager.focusSummary();
-      return;
-    }
 
     this.setItemState(nextItem, UploadState.Uploading);
     this.provisionUpload(file);

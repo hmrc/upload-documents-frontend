@@ -111,7 +111,7 @@ Minimal payload example:
 |`continueWhenFullUrl`|string|optional|A host URL where to proceed after user clicks continue and there are no more file slots left, defaults to `continueUrl`|
 |`continueWhenEmptyUrl`|string|optional|A host URL where to proceed after user clicks continue and none file has been uploaded yet, defaults to `continueUrl`|
 |`minimumNumberOfFiles`|number|optional|Minimum number of files user can upload, usually 0 or 1, defaults to 1|
-|`minimumNumberOfFiles`|number|optional|Maximum number of files user can upload, defaults to 10|
+|`maximumNumberOfFiles`|number|optional|Maximum number of files user can upload, defaults to 10|
 |`initialNumberOfEmptyRows`|number|optional|Initial number of empty choose file rows, defaults to 3|
 |`maximumFileSizeBytes`|number|optional|Maximum size in bytes of a single file user can upload, defaults to 10485760 (10MB)|
 |`allowedContentTypes`|string|optional|A comma separated list of allowed MIME types of the file, defaults to `image/jpeg,image/png,application/pdf,text/plain`|

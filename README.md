@@ -72,7 +72,11 @@ An endpoint to initialize upload session. Might be invoked multiple times in the
 
 Requires an `Authorization` and `X-Session-ID` headers, usually supplied transparently by the `HeaderCarrier`. 
 
-Returns `201 Created` with `Location` header pointing to the right upload page URL.
+|response|description|
+|:----:|-----------|
+|201   | Success with `Location` header pointing to the right upload page URL |
+|400   | Invalid payload |
+|403   | Unauthorized request |
 
 Minimal payload example:
 ```
@@ -158,7 +162,10 @@ And endpoint to immediately remove upload session data, usually invoked at the e
 
 Requires an `Authorization` and `X-Session-ID` headers, usually supplied transparently by the `HeaderCarrier`. 
 
-Returns `204 NoContent`.
+|response|description|
+|:----:|-----------|
+|204   | Success |
+|403   | Unauthorized request |
 
 ## Development
 

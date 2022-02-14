@@ -18,6 +18,7 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve._
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
@@ -26,6 +27,7 @@ import uk.gov.hmrc.play.bootstrap.config.AuthRedirects
 import uk.gov.hmrc.uploaddocuments.support.CallOps
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc.Results
 
 trait AuthActions extends AuthorisedFunctions with AuthRedirects {
 
@@ -50,9 +52,16 @@ trait AuthActions extends AuthorisedFunctions with AuthRedirects {
   protected def authorisedWithoutEnrolment[A](
     body: ((Option[String], Option[String])) => Future[Result]
   )(implicit request: Request[A], hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
-    authorised(AuthProviders(GovernmentGateway))
+    authorised(AuthProviders(GovernmentGateway, PrivilegedApplication))
       .retrieve(credentials)(credentials => body((credentials.map(_.providerId), None)))
       .recover(handleFailure)
+
+  protected def authorisedWithoutEnrolmentReturningForbidden[A](
+    body: ((Option[String], Option[String])) => Future[Result]
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+    authorised(AuthProviders(GovernmentGateway, PrivilegedApplication))
+      .retrieve(credentials)(credentials => body((credentials.map(_.providerId), None)))
+      .recover { case e: AuthorisationException => Results.Forbidden }
 
   def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
     case e: AuthorisationException =>

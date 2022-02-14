@@ -43,8 +43,15 @@ class AuthActionsISpec extends AuthActionISpecSetup {
 
   "authorisedWithoutEnrolment" should {
 
-    "authorize even when insufficient enrollments" in {
+    "authorize when insufficient enrollments" in {
       givenAuthorisedWithoutEnrolments
+      val result = TestController.testAuhorizedWithoutEnrolment
+      status(result) shouldBe 200
+      bodyOf(result) should be("12345-credId,none")
+    }
+
+    "authorize stride users" in {
+      givenAuthorisedAsStrideUser
       val result = TestController.testAuhorizedWithoutEnrolment
       status(result) shouldBe 200
       bodyOf(result) should be("12345-credId,none")
@@ -57,6 +64,29 @@ class AuthActionsISpec extends AuthActionISpecSetup {
       redirectLocation(result).get should include(
         "/bas-gateway/sign-in?continue_url=%2F&origin=upload-documents-frontend"
       )
+    }
+  }
+
+  "authorisedWithoutEnrolmentReturningForbidden" should {
+
+    "authorize when insufficient enrollments" in {
+      givenAuthorisedWithoutEnrolments
+      val result = TestController.testAuhorizedWithoutEnrolmentReturningForbidden
+      status(result) shouldBe 200
+      bodyOf(result) should be("12345-credId,none")
+    }
+
+    "authorize stride users" in {
+      givenAuthorisedAsStrideUser
+      val result = TestController.testAuhorizedWithoutEnrolmentReturningForbidden
+      status(result) shouldBe 200
+      bodyOf(result) should be("12345-credId,none")
+    }
+
+    "redirect to government gateway login when authorization fails" in {
+      givenRequestIsNotAuthorised("IncorrectCredentialStrength")
+      val result = TestController.testAuhorizedWithoutEnrolmentReturningForbidden
+      status(result) shouldBe 403
     }
   }
 }
@@ -85,6 +115,11 @@ trait AuthActionISpecSetup extends AppISpec {
 
     def testAuhorizedWithoutEnrolment[A]: Result =
       await(super.authorisedWithoutEnrolment { case (uid, res) =>
+        Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
+      })
+
+    def testAuhorizedWithoutEnrolmentReturningForbidden[A]: Result =
+      await(super.authorisedWithoutEnrolmentReturningForbidden { case (uid, res) =>
         Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
       })
   }

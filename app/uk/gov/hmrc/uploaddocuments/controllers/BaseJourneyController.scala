@@ -53,7 +53,7 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
 
   final val AsBackchannelUser: WithAuthorised[Unit] = { implicit request => body =>
     val hc = HeaderCarrierConverter.fromRequest(request)
-    authorisedWithoutEnrolment(_ => body(()))(request, hc, ec)
+    authorisedWithoutEnrolmentReturningForbidden(_ => body(()))(hc, ec)
   }
 
   final val whenAuthenticatedInBackchannel = actions.whenAuthorised(AsBackchannelUser)

@@ -132,6 +132,45 @@ trait AuthStubs {
     this
   }
 
+  def givenAuthorisedAsStrideUser: AuthStubs = {
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .atPriority(1)
+        .withRequestBody(
+          equalToJson(
+            s"""
+              |{
+              |  "authorise": [
+              |    { "authProviders": ["PrivilegedApplication"] }
+              |  ],
+              |  "retrieve":["optionalCredentials"]
+              |}
+           """.stripMargin,
+            true,
+            true
+          )
+        )
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(
+              s"""{"optionalCredentials": {"providerId": "12345-credId", "providerType": "PrivilegedApplication"}}""".stripMargin
+            )
+        )
+    )
+
+    stubFor(
+      post(urlEqualTo("/auth/authorise"))
+        .atPriority(2)
+        .willReturn(
+          aResponse()
+            .withStatus(401)
+            .withHeader("WWW-Authenticate", "MDTP detail=\"InsufficientEnrolments\"")
+        )
+    )
+    this
+  }
+
   def givenDummySubscriptionUrl: AuthStubs = {
     stubFor(
       get(urlEqualTo("/dummy-subscription-url")).willReturn(

@@ -32,9 +32,14 @@ abstract class ServerISpec extends BaseISpec with GuiceOneServerPerSuite {
   case class JourneyId(value: String = UUID.randomUUID().toString)
 
   val baseUrl: String = s"http://localhost:$port/upload-documents"
+  val backchannelBaseUrl: String = s"http://localhost:$port/internal"
 
   def requestWithoutSessionId(path: String) =
     wsClient
       .url(s"$baseUrl$path")
+
+  def backchannelRequestWithoutSessionId(path: String) =
+    wsClient
+      .url(s"$backchannelBaseUrl$path")
 
 }

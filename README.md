@@ -24,13 +24,15 @@ Reference implementation of the UDF integration can be found in the https://gith
 
 ### Tasks
 
-1. implement a backchannel connector to the UDF calling [`/initialize`](#api-initialize) endpoint and returning link to the upload page,
+1. implement a backchannel connector to the UDF calling [`https://upload-documents-frontend.public.mdtp/internal/initialize`](#api-initialize) endpoint and returning link to the upload page,
 
 2. implement an authenticated backchannel `+nocsrf POST` endpoint for receiving [`UploadedFilesCallbackPayload`](#callback-payload); this will be pushed to the host service every time new file is uploaded or existing removed; UDF will take care of sending proper `Authorization` and `X-Session-ID` headers with the request,
 
 3. use connector (1) each time before you navigate the user to the upload page, send a config and optionally a list of already uploaded files, use returned `Location` header to redirect user to the upload page URL,
 
-4. call [`/wipe-out`](#api-wipe-out) endpoint when you no longer need upload session data, ideally after successful conclusion of the host journey.
+4. call [`https://upload-documents-frontend.public.mdtp/internal/wipe-out`](#api-wipe-out) endpoint when you no longer need upload session data, ideally after successful conclusion of the host journey.
+
+Locally you should use `http://localhost:10100` instead of `https://upload-documents-frontend.public.mdtp`.
 
 <a name="callback-payload"></a>
 ### Callback payload schema
@@ -68,7 +70,9 @@ Reference implementation of the UDF integration can be found in the https://gith
 <a name="api-initialize"></a>
 ### POST /initialize
 
-An endpoint to initialize upload session. Might be invoked multiple times in the same session.
+An internal endpoint to initialize upload session. Might be invoked multiple times in the same session.
+
+Location: `https://upload-documents-frontend.public.mdtp/internal/initialize` or `http://localhost:10100/internal/initialize`
 
 Requires an `Authorization` and `X-Session-ID` headers, usually supplied transparently by the `HeaderCarrier`. 
 
@@ -158,7 +162,9 @@ Minimal payload example:
 <a name="api-wipe-out"></a>
 ### POST /wipe-out
 
-And endpoint to immediately remove upload session data, usually invoked at the end of an encompassing host journey. If not, session data will be removed anyway after the MongoDB cache timeout expires.
+An internal endpoint to immediately remove upload session data, usually invoked at the end of an encompassing host journey. If not, session data will be removed anyway after the MongoDB cache timeout expires.
+
+Location: `https://upload-documents-frontend.public.mdtp/internal/wipe-out` or `http://localhost:10100/internal/wipe-out`
 
 Requires an `Authorization` and `X-Session-ID` headers, usually supplied transparently by the `HeaderCarrier`. 
 

@@ -1,6 +1,6 @@
 import parseHtml from '../utils/parse-html.util';
-import {ErrorList} from '../interfaces/error-list.interface';
-import {KeyValue} from '../interfaces/key-value.interface';
+import { ErrorList } from '../interfaces/error-list.interface';
+import { KeyValue } from '../interfaces/key-value.interface';
 
 export default class ErrorManager {
   private classes: KeyValue;
@@ -53,7 +53,7 @@ export default class ErrorManager {
   }
 
   public removeError(inputId: string): void {
-    if(!Object.prototype.hasOwnProperty.call(this.errors, inputId)) {
+    if (!Object.prototype.hasOwnProperty.call(this.errors, inputId)) {
       return;
     }
 
@@ -71,22 +71,29 @@ export default class ErrorManager {
     this.updateErrorSummaryVisibility();
   }
 
+  public hasError(inputId: string): boolean {
+    return Object.prototype.hasOwnProperty.call(this.errors, inputId);
+  }
+
   public hasErrors(): boolean {
     return Object.entries(this.errors).length > 0;
   }
 
   private addErrorToField(inputId: string, message: string): HTMLElement {
-    const input = document.getElementById(inputId);
-    const inputContainer = this.getContainer(input);
-    const label = this.getLabel(inputContainer);
-
     const errorMessage = parseHtml(this.errorMessageTpl, {
       errorMessage: message
     });
 
-    inputContainer.classList.add(this.classes.inputContainerError);
+    const input = document.getElementById(inputId);
 
-    label.after(errorMessage);
+    if (input) {
+      const inputContainer = this.getContainer(input);
+      const label = this.getLabel(inputContainer);
+
+      inputContainer.classList.add(this.classes.inputContainerError);
+
+      label.after(errorMessage);
+    }
 
     return errorMessage;
   }

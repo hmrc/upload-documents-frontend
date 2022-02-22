@@ -130,7 +130,10 @@ Minimal payload example:
 |[`features`](#api-initialize-payload-config-features)|object|optional|Features customisation|
 
 <a name="api-initialize-payload-config-content"></a>
-#### Customized session content schema:
+#### Upload session content customization schema:
+
+![](docs/choose-file-customization-properties.png)
+
 
 |field|type|required|description|
 |-----|----|--------|-----------|
@@ -154,9 +157,11 @@ Minimal payload example:
 |`fileUploadedProgressBarLabel`|string|optional|Progress bar label displayed when file uploaded, defaults to `Ready to submit`|
 |`chooseFirstFileLabel`|string|optional|The label of the first file-input element. If files have descriptions then the label of the first file-input with description as defined in `newFileDescription`|
 |`chooseNextFileLabel`|string|optional|The label of each next file-input element|
+|`showAddAnotherDocumentButton`|boolean|optional|If `true` then shows `Add Another Document` on the /choose-files page. If `false` then instead automatically adds an empty file input row when needed. |
+|`addAnotherDocumentButtonText`|string|optional|The text of the `Add Another Document` button, if enabled.|
 
 <a name="api-initialize-payload-config-features"></a>
-#### Customized session content schema:
+#### Upload session features customization schema:
 
 |field|type|required|description|
 |-----|----|--------|-----------|

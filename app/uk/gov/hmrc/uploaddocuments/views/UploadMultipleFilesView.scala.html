@@ -125,10 +125,11 @@ context: UploadFileViewHelper
     data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
     data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
     @newFileDescription.map{value => data-multi-file-upload-new-file-description="@value"}.getOrElse("")
+    @if(serviceContent.showAddAnotherDocumentButton){data-multi-file-upload-show-add-another-document-button}
   >
     <ul class="multi-file-upload__item-list"></ul>
 
-    <button type="button" class="multi-file-upload__add-another govuk-button govuk-button--secondary">@messages("view.upload-multiple-files.addAnother")</button>
+    <button type="button" class="multi-file-upload__add-another govuk-button govuk-button--secondary">@serviceContent.addAnotherDocumentButtonText.getOrElse(messages("view.upload-multiple-files.addAnother"))</button>
 
     @html.p(
       content = Html(messages("view.upload-multiple-files.uploadMoreFilesThanLimit", maximumNumberOfFiles)),

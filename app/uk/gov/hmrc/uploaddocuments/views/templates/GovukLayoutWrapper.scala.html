@@ -83,7 +83,7 @@ None, refresh: Int = 0)(contentBlock: Html)(implicit request: Request[_], messag
 }
 
 @beforeContentBlock = {
-  @if(serviceContent.showLanguageSelection.getOrElse(true)){
+  @if(serviceContent.showLanguageSelection){
     @languageSelection(
       appConfig.languageMap,
       appConfig.routeToSwitchLanguage

@@ -151,6 +151,7 @@ Minimal payload example:
 |`pageTitleClasses`|string|optional|Customized page heading classes|
 |`allowedFilesTypesHint`|string|optional|A hint text to display for invalid uploads|
 |`contactFrontendServiceId`|string|optional|A `serviceId` for HmrcReportTechnicalIssue component|
+|`fileUploadedProgressBarLabel`|string|optional|Progress bar label displayed when file uploaded, defaults to `Ready to submit`|
 
 <a name="api-initialize-payload-config-features"></a>
 #### Customized session content schema:

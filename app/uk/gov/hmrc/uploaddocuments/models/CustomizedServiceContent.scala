@@ -39,7 +39,8 @@ final case class CustomizedServiceContent(
   showLanguageSelection: Option[Boolean] = None,
   pageTitleClasses: Option[String] = None,
   allowedFilesTypesHint: Option[String] = None,
-  contactFrontendServiceId: Option[String] = None
+  contactFrontendServiceId: Option[String] = None,
+  fileUploadedProgressBarLabel: Option[String] = None
 ) {
 
   def safeDescriptionHtml: Option[String] =

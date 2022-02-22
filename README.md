@@ -24,7 +24,7 @@ Reference implementation of the UDF integration can be found in the https://gith
 
 ### Tasks
 
-1. implement a backchannel connector to the UDF calling [`https://upload-documents-frontend.public.mdtp/internal/initialize`](#api-initialize) endpoint and returning link to the upload page,
+1. implement a backchannel connector to the UDF calling [`https://upload-documents-frontend.public.mdtp/internal/initialize`](#api-initialize) endpoint,
 
 2. implement an authenticated backchannel `+nocsrf POST` endpoint for receiving [`UploadedFilesCallbackPayload`](#callback-payload); this will be pushed to the host service every time new file is uploaded or existing removed; UDF will take care of sending proper `Authorization` and `X-Session-ID` headers with the request,
 

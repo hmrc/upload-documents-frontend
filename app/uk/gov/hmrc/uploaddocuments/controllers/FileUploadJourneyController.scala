@@ -355,6 +355,7 @@ class FileUploadJourneyController @Inject() (
             allowedFileTypesHint = context.config.content.allowedFilesTypesHint
               .orElse(context.config.allowedFileExtensions)
               .getOrElse(context.config.allowedContentTypes),
+            context.config.newFileDescription,
             initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = controller.checkFileVerificationStatus,
@@ -376,6 +377,7 @@ class FileUploadJourneyController @Inject() (
             allowedFileTypesHint = context.config.content.allowedFilesTypesHint
               .orElse(context.config.allowedFileExtensions)
               .getOrElse(context.config.allowedContentTypes),
+            context.config.newFileDescription,
             uploadRequest = uploadRequest,
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,

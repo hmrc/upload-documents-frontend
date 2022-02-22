@@ -39,6 +39,9 @@ describe('Multi File Upload component', () => {
         <form class="multi-file-upload"
           data-multi-file-upload-document-uploaded="Document {fileName} has been uploaded"
           data-multi-file-upload-document-deleted="Document {fileName} has been deleted"
+          data-multi-file-upload-choose-first-file-label=="First document"
+          data-multi-file-upload-choose-next-file-label="Next document"
+          data-multi-file-upload-new-file-description="My document type"
           >
           <ul class="multi-file-upload__item-list"></ul>
           
@@ -56,13 +59,12 @@ describe('Multi File Upload component', () => {
           <script type="text/x-template" id="multi-file-upload-item-tpl"> 
             <li class="multi-file-upload__item">
               <div class="govuk-form-group">
-                <label class="govuk-label" for="file-{fileIndex}">Document <span class="multi-file-upload__number">{fileNumber}</span></label>
+                <label class="govuk-label  multi-file-upload__item-label" for="file-{fileIndex}"></span></label>
                 <div class="multi-file-upload__item-content">
                   <div class="multi-file-upload__file-container">
                     <input class="multi-file-upload__file govuk-file-upload" type="file" id="file-{fileIndex}">
                     <span class="multi-file-upload__file-name"></span>
                     <a class="multi-file-upload__file-preview"></a>
-                    <span class="multi-file-upload__description"></span>
                   </div>
             
                   <div class="multi-file-upload__meta-container">
@@ -81,6 +83,7 @@ describe('Multi File Upload component', () => {
                   </div>
                 </div>
               </div>
+              <div class="multi-file-upload__description"></div>
             </li>
           </script>
           

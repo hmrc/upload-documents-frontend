@@ -34,6 +34,7 @@ context: UploadFileViewHelper
   maximumFileSizeBytes: Long, 
   filePickerAcceptFilter: String, 
   allowedFileTypesHint: String,
+  newFileDescription: Option[String],
   uploadRequest: UploadRequest, 
   fileUploads: FileUploads, 
   maybeUploadError: Option[FileUploadError], 
@@ -75,7 +76,12 @@ context: UploadFileViewHelper
       value = Some(""),
       describedBy = None,
       label = Label(
-        content = Text(messages(if(fileUploads.isEmpty) "view.upload-file.first.fileLabel" else "view.upload-file.next.fileLabel"))
+        content = Text(
+          if(fileUploads.isEmpty || !newFileDescription.exists(fileUploads.hasFileWithDescription(_)))
+            serviceContent.chooseFirstFileLabel.getOrElse(messages("view.upload-file.first.fileLabel"))
+          else 
+            serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-file.next.fileLabel"))
+        )
       ),
       hint = None,
       errorMessage = maybeUploadError.map(context.toFormError(_, maximumFileSizeBytes, allowedFileTypesHint)).map(err => ErrorMessage(content = Text(messages(err.message, err.args: _*)))),

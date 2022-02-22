@@ -36,10 +36,15 @@ final case class CustomizedServiceContent(
   keepAliveUrl: Option[String] = None,
   timeoutSeconds: Option[Int] = None,
   countdownSeconds: Option[Int] = None,
-  showLanguageSelection: Option[Boolean] = None,
   pageTitleClasses: Option[String] = None,
   allowedFilesTypesHint: Option[String] = None,
-  contactFrontendServiceId: Option[String] = None
+  contactFrontendServiceId: Option[String] = None,
+  fileUploadedProgressBarLabel: Option[String] = None,
+  chooseFirstFileLabel: Option[String] = None,
+  chooseNextFileLabel: Option[String] = None,
+  showLanguageSelection: Boolean = true,
+  showAddAnotherDocumentButton: Boolean = false,
+  addAnotherDocumentButtonText: Option[String] = None
 ) {
 
   def safeDescriptionHtml: Option[String] =
@@ -58,6 +63,6 @@ object CustomizedServiceContent {
   }
 
   implicit val format: Format[CustomizedServiceContent] =
-    Json.format[CustomizedServiceContent]
+    Json.using[Json.WithDefaultValues].format[CustomizedServiceContent]
 
 }

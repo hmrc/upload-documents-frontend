@@ -35,7 +35,8 @@ export class MultiFileUpload extends Component {
       actionUrl: form.action,
       sendUrlTpl: decodeURIComponent(form.dataset.multiFileUploadSendUrlTpl),
       statusUrlTpl: decodeURIComponent(form.dataset.multiFileUploadStatusUrlTpl),
-      removeUrlTpl: decodeURIComponent(form.dataset.multiFileUploadRemoveUrlTpl)
+      removeUrlTpl: decodeURIComponent(form.dataset.multiFileUploadRemoveUrlTpl),
+      showAddAnotherDocumentButton: form.dataset.multiFileUploadShowAddAnotherDocumentButton !== undefined
     };
 
     this.messages = {
@@ -48,11 +49,15 @@ export class MultiFileUpload extends Component {
       invalidSizeLargeError: form.dataset.multiFileUploadErrorInvalidSizeLarge,
       invalidSizeSmallError: form.dataset.multiFileUploadErrorInvalidSizeSmall,
       invalidTypeError: form.dataset.multiFileUploadErrorInvalidType,
+      chooseFirstFileLabel: form.dataset.multiFileUploadChooseFirstFileLabel,
+      chooseNextFileLabel: form.dataset.multiFileUploadChooseNextFileLabel,
+      newFileDescription: form.dataset.multiFileUploadNewFileDescription
     };
 
     this.classes = {
       itemList: 'multi-file-upload__item-list',
       item: 'multi-file-upload__item',
+      itemLabel: 'multi-file-upload__item-label',
       waiting: 'multi-file-upload__item--waiting',
       uploading: 'multi-file-upload__item--uploading',
       verifying: 'multi-file-upload__item--verifying',
@@ -103,8 +108,8 @@ export class MultiFileUpload extends Component {
   }
 
   public init(): void {
-    this.updateButtonVisibility();
     this.removeAllItems();
+    this.updateButtonVisibility();
     this.createInitialRows();
   }
 
@@ -138,6 +143,7 @@ export class MultiFileUpload extends Component {
     this.setItemState(item, UploadState.Uploaded);
     this.getFileNameElement(item).textContent = fileName;
     this.getDescriptionElement(item).textContent = fileData['description'];
+    this.toggleItemLabel(item, false);
 
     filePreview.textContent = fileName;
     filePreview.href = fileData['previewUrl'];
@@ -182,17 +188,42 @@ export class MultiFileUpload extends Component {
   }
 
   private addItem(): HTMLElement {
-    const item = parseHtml(this.itemTpl, {
-      fileNumber: (this.getItems().length + 1).toString(),
-      fileIndex: (++this.lastFileIndex).toString()
-    }) as HTMLElement;
+    const fileNumber = this.getItems().length + 1;
+    const fileIndex = ++this.lastFileIndex;
+    const itemParams = {
+      fileNumber: fileNumber.toString(),
+      fileIndex: fileIndex.toString()
+    }
+    const item = parseHtml(this.itemTpl, itemParams) as HTMLElement;
 
     this.bindItemEvents(item);
     this.itemList.append(item);
-
+    this.getDescriptionElement(item).textContent = this.messages.newFileDescription;
+    this.updateItemLabel(item, fileNumber);
     this.updateButtonVisibility();
 
     return item;
+  }
+
+  private isFirstFileWithDescription(item: HTMLElement, description: String): Boolean {
+    if (!description) return false;
+    const i = this.getItems().indexOf(item);
+    const prefix = this.getItems().slice(0, i);
+    const result = prefix.find(item => this.getDescriptionElement(item).textContent === description);
+    return result === undefined;
+  }
+
+  private updateItemLabel(item: HTMLElement, fileNumber: Number): void {
+    const label = this.getItemLabelElement(item);
+    const isFirstFileOfItsKind = fileNumber === 1 ||
+      this.isFirstFileWithDescription(item, this.getDescriptionElement(item).textContent);
+    if (label) {
+      if (isFirstFileOfItsKind && this.messages.chooseFirstFileLabel) {
+        label.textContent = this.messages.chooseFirstFileLabel;
+      } else if (!isFirstFileOfItsKind && this.messages.chooseNextFileLabel) {
+        label.textContent = this.messages.chooseNextFileLabel;
+      }
+    }
   }
 
   private handleRemoveItem(e: Event): void {
@@ -248,10 +279,7 @@ export class MultiFileUpload extends Component {
     this.updateFileNumbers();
     this.updateButtonVisibility();
     this.updateFormStatusVisibility();
-
-    if (this.getItems().length === 0) {
-      this.addItem();
-    }
+    if (this.getItems().length < Math.max(this.config.minFiles, this.config.startRows) || this.getEmptyItems().length < 1) { this.addItem(); }
 
     delete this.uploadData[file.id];
 
@@ -317,6 +345,7 @@ export class MultiFileUpload extends Component {
       this.setItemState(item, UploadState.Default);
       this.updateFormStatusVisibility();
       this.errorManager.addError(file.id, this.messages.invalidSizeLargeError);
+      this.updateButtonVisibility();
       return;
     }
 
@@ -324,11 +353,14 @@ export class MultiFileUpload extends Component {
       this.setItemState(item, UploadState.Default);
       this.updateFormStatusVisibility();
       this.errorManager.addError(file.id, this.messages.invalidSizeSmallError);
+      this.updateButtonVisibility();
       return;
     }
 
+    this.toggleItemLabel(item, false);
     this.getFileNameElement(item).textContent = this.extractFileName(file.value);
     this.setItemState(item, UploadState.Waiting);
+
     this.uploadNext();
   }
 
@@ -336,6 +368,9 @@ export class MultiFileUpload extends Component {
     const nextItem = this.itemList.querySelector(`.${this.classes.waiting}`) as HTMLElement;
 
     if (!nextItem || this.isBusy()) {
+      if (!this.config.showAddAnotherDocumentButton && !this.hasEmptyOrErrorItem()) {
+        this.handleAddItem();
+      }
       return;
     }
 
@@ -494,6 +529,8 @@ export class MultiFileUpload extends Component {
         span.textContent = fileNumber.toString();
       });
 
+      this.updateItemLabel(item, fileNumber);
+
       fileNumber++;
     });
   }
@@ -502,7 +539,7 @@ export class MultiFileUpload extends Component {
     const itemCount = this.getItems().length;
 
     this.toggleRemoveButtons(itemCount > this.config.minFiles);
-    this.toggleAddButton(itemCount < this.config.maxFiles);
+    this.toggleAddButton(this.config.showAddAnotherDocumentButton && itemCount < this.config.maxFiles);
     this.toggleUploadMoreMessage(itemCount === this.config.maxFiles);
   }
 
@@ -519,16 +556,20 @@ export class MultiFileUpload extends Component {
     item.querySelector(`.${this.classes.progressBar}`).style.width = `${value}%`;
   }
 
+  private toggleRemoveButton(item: HTMLElement, state: boolean): void {
+    const button = this.getRemoveButtonFromItem(item);
+
+    if (this.isWaiting(item) || this.isUploading(item) || this.isVerifying(item) || this.isUploaded(item)) {
+      state = true;
+    } else if (this.isEmpty(item)) {
+      state = false;
+    }
+
+    toggleElement(button, state);
+  }
+
   private toggleRemoveButtons(state: boolean): void {
-    this.getItems().forEach(item => {
-      const button = this.getRemoveButtonFromItem(item);
-
-      if (this.isWaiting(item) || this.isUploading(item) || this.isVerifying(item) || this.isUploaded(item)) {
-        state = true;
-      }
-
-      toggleElement(button, state);
-    });
+    this.getItems().forEach(item => this.toggleRemoveButton(item, state));
   }
 
   private addNotification(message: string): void {
@@ -544,6 +585,10 @@ export class MultiFileUpload extends Component {
 
   private toggleAddButton(state: boolean): void {
     toggleElement(this.addAnotherBtn, state);
+  }
+
+  private toggleItemLabel(item: HTMLElement, state: boolean): void {
+    toggleElement(this.getItemLabelElement(item), state);
   }
 
   private toggleUploadMoreMessage(state: boolean): void {
@@ -613,6 +658,10 @@ export class MultiFileUpload extends Component {
     return item.querySelector(`.${this.classes.description}`);
   }
 
+  private getItemLabelElement(item: HTMLElement): HTMLElement {
+    return item.querySelector(`.${this.classes.itemLabel}`);
+  }
+
   private extractFileName(fileName: string): string {
     return fileName.split(/([\\/])/g).pop();
   }
@@ -629,6 +678,41 @@ export class MultiFileUpload extends Component {
     const stillRemoving = this.container.querySelector(`.${this.classes.removing}`) !== null;
 
     return stillUploading || stillVerifying || stillRemoving;
+  }
+
+  private getEmptyItems(): HTMLElement[] {
+    return this.getItems().filter(item => item && this.isEmpty(item));
+  }
+
+  private hasEmptyItem(): boolean {
+    return this.getEmptyItems().length > 0;
+  }
+
+  private getEmptyOrErrorItems(): HTMLElement[] {
+    return this.getItems().filter(item => item && this.isEmptyOrError(item));
+  }
+
+  private hasEmptyOrErrorItem(): boolean {
+    return this.getEmptyOrErrorItems().length > 0;
+  }
+
+  private isEmpty(item: HTMLElement): boolean {
+    return !(this.isWaiting(item)
+      || this.isUploading(item)
+      || this.isVerifying(item)
+      || this.isUploaded(item)
+      || this.isRemoving(item)
+      || (this.getFileFromItem(item) && this.errorManager.hasError(this.getFileFromItem(item).id))
+    );
+  }
+
+  private isEmptyOrError(item: HTMLElement): boolean {
+    return !(this.isWaiting(item)
+      || this.isUploading(item)
+      || this.isVerifying(item)
+      || this.isUploaded(item)
+      || this.isRemoving(item)
+    );
   }
 
   private isWaiting(item: HTMLElement): boolean {

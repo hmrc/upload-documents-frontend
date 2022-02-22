@@ -87,6 +87,12 @@ case class FileUploads(
       case _                      => false
     })
 
+  def hasFileWithDescription(description: String): Boolean =
+    files.exists {
+      case a: FileUpload.Accepted => a.safeDescription.contains(description)
+      case _                      => false
+    }
+
 }
 
 object FileUploads {

@@ -38,6 +38,7 @@ context: UploadFileViewHelper
   maximumFileSizeBytes: Long,
   filePickerAcceptFilter: String,
   allowedFileTypesHint: String,
+  newFileDescription: Option[String],
   initialFileUploads: Seq[FileUpload],
   initiateNextFileUpload: String => Call,
   checkFileVerificationStatus: String => Call,
@@ -120,6 +121,10 @@ context: UploadFileViewHelper
     data-multi-file-upload-still-transferring="@messages("view.upload-multiple-files.stillTransferring")"
     data-multi-file-upload-document-uploaded="@messages("view.upload-multiple-files.documentUploaded", "{fileName}")"
     data-multi-file-upload-document-deleted="@messages("view.upload-multiple-files.documentDeleted", "{fileName}")"
+    data-multi-file-upload-choose-first-file-label="@serviceContent.chooseFirstFileLabel.getOrElse(messages("view.upload-multiple-files.chooseFirstFileLabel"))"
+    data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
+    data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
+    @newFileDescription.map{value => data-multi-file-upload-new-file-description="@value"}.getOrElse("")
   >
     <ul class="multi-file-upload__item-list"></ul>
 

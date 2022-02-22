@@ -40,7 +40,9 @@ final case class CustomizedServiceContent(
   pageTitleClasses: Option[String] = None,
   allowedFilesTypesHint: Option[String] = None,
   contactFrontendServiceId: Option[String] = None,
-  fileUploadedProgressBarLabel: Option[String] = None
+  fileUploadedProgressBarLabel: Option[String] = None,
+  chooseFirstFileLabel: Option[String] = None,
+  chooseNextFileLabel: Option[String] = None
 ) {
 
   def safeDescriptionHtml: Option[String] =

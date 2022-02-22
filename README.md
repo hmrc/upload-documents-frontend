@@ -152,6 +152,8 @@ Minimal payload example:
 |`allowedFilesTypesHint`|string|optional|A hint text to display for invalid uploads|
 |`contactFrontendServiceId`|string|optional|A `serviceId` for HmrcReportTechnicalIssue component|
 |`fileUploadedProgressBarLabel`|string|optional|Progress bar label displayed when file uploaded, defaults to `Ready to submit`|
+|`chooseFirstFileLabel`|string|optional|The label of the first file-input element. If files have descriptions then the label of the first file-input with description as defined in `newFileDescription`|
+|`chooseNextFileLabel`|string|optional|The label of each next file-input element|
 
 <a name="api-initialize-payload-config-features"></a>
 #### Customized session content schema:

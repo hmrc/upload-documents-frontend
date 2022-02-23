@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.uploaddocuments.models
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json.{Format, JsPath}
+import play.api.libs.json.Json
+import play.api.libs.json.Format
 
 case class Features(
-  showUploadMultiple: Boolean = true
+  showUploadMultiple: Boolean = true,
+  showLanguageSelection: Boolean = true,
+  showAddAnotherDocumentButton: Boolean = false,
+  showYesNoQuestionBeforeContinue: Boolean = false
 )
 
 object Features {
-  implicit val format: Format[Features] = Format(
-    ((JsPath \ "showUploadMultiple").readWithDefault[Boolean](true)).map(Features.apply _),
-    ((JsPath \ "showUploadMultiple").write[Boolean]).contramap(unlift(Features.unapply(_)))
-  )
+  implicit val format: Format[Features] =
+    Json.using[Json.WithDefaultValues].format[Features]
 }

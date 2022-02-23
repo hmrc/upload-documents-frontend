@@ -163,6 +163,21 @@ object FileUploadJourneyModel extends JourneyModel {
         case _                     => goto(Uninitialized)
       }
 
+    final def continueWithYesNo(selectedYes: Boolean) =
+      Transition {
+        case s: FileUploadState =>
+          goto(
+            if (selectedYes) Initialized(s.context, s.fileUploads)
+            else ContinueToHost(s.context, s.fileUploads)
+          )
+        case s: CanEnterFileUpload =>
+          goto(
+            if (selectedYes) Initialized(s.context, s.fileUploadsOpt.getOrElse(FileUploads()))
+            else ContinueToHost(s.context, s.fileUploadsOpt.getOrElse(FileUploads()))
+          )
+        case _ => goto(Uninitialized)
+      }
+
     final val wipeOut =
       Transition { case _ => goto(Uninitialized) }
 
@@ -591,17 +606,20 @@ object FileUploadJourneyModel extends JourneyModel {
       upscanRequest: UpscanRequestBuilder
     )(
       upscanInitiate: UpscanInitiateApi
-    )(exitFileUpload: Transition)(uploadAnotherFile: Boolean)(implicit ec: ExecutionContext) =
+    )(exitFileUpload: Transition)(selectedYes: Boolean)(implicit ec: ExecutionContext) =
       Transition {
         case current @ Summary(context, fileUploads, acknowledged) =>
-          if (uploadAnotherFile && fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
-            gotoUploadSingleFileOrSummary(
-              context,
-              upscanRequest,
-              upscanInitiate,
-              Some(fileUploads),
-              showUploadSummaryIfAny = false
-            )
+          if (selectedYes && fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
+            if (current.context.features.showYesNoQuestionBeforeContinue)
+              goto(Initialized(current.context, current.fileUploads))
+            else
+              gotoUploadSingleFileOrSummary(
+                context,
+                upscanRequest,
+                upscanInitiate,
+                Some(fileUploads),
+                showUploadSummaryIfAny = false
+              )
           else {
             exitFileUpload.apply(current)
           }

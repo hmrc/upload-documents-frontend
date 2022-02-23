@@ -14,11 +14,12 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,UploadRequest,FileUploadError,CustomizedServiceContent}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,UploadRequest,FileUploadError,CustomizedServiceContent,Features}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 @import uk.gov.hmrc.uploaddocuments.views.html.partials.multiFileUpload
 @import uk.gov.hmrc.uploaddocuments.views.html.partials.errorManager
+@import views.html.helper.CSRF
 
 @this(
 govukLayout: uk.gov.hmrc.uploaddocuments.views.html.templates.GovukLayoutWrapper,
@@ -46,8 +47,11 @@ context: UploadFileViewHelper
   previewFile: (String,String) => Call,
   markFileRejected: Call,
   continueAction: Call,
-  backLink: Call
-)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+  backLink: Call,
+  showYesNoQuestion: Boolean,
+  yesNoQuestionText: Option[String],
+  form: Form[Boolean]
+)(implicit request: Request[_], messages: Messages, features: Features, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle("view.upload-multiple-files.title"),
@@ -102,7 +106,8 @@ context: UploadFileViewHelper
   }
 
   <form
-    action="@continueAction"
+    action="@continueAction.url"
+    method="@continueAction.method"
     class="multi-file-upload"
     data-multi-file-upload-start-rows="@Math.min(initialNumberOfEmptyRows,maximumNumberOfFiles)"
     data-multi-file-upload-min-files="@minimumNumberOfFiles"
@@ -125,9 +130,12 @@ context: UploadFileViewHelper
     data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
     data-multi-file-upload-choose-next-file-label="@serviceContent.chooseNextFileLabel.getOrElse(messages("view.upload-multiple-files.chooseNextFileLabel"))"
     @newFileDescription.map{value => data-multi-file-upload-new-file-description="@value"}.getOrElse("")
-    @if(serviceContent.showAddAnotherDocumentButton){data-multi-file-upload-show-add-another-document-button}
+    @if(features.showAddAnotherDocumentButton){data-multi-file-upload-show-add-another-document-button}
+    @if(form.errors.nonEmpty){data-multi-file-upload-initial-error="@form.errors.map(error => messages(error.message,error.args:_*)).head"}
   >
-    <ul class="multi-file-upload__item-list"></ul>
+    <ul class="multi-file-upload__item-list govuk-!-margin-bottom-5"></ul>
+
+    @CSRF.formField
 
     <button type="button" class="multi-file-upload__add-another govuk-button govuk-button--secondary">@serviceContent.addAnotherDocumentButtonText.getOrElse(messages("view.upload-multiple-files.addAnother"))</button>
 
@@ -142,6 +150,32 @@ context: UploadFileViewHelper
     </p>
 
     <div>
+     @if(showYesNoQuestion){
+        @forms.inputRadio(
+          form = form,
+          idPrefix = "choice",
+          name = "choice",
+          inline = true,
+          items = Seq(
+            RadioItem(
+              value = Some("yes"),
+              content = Text(messages("form.file-uploaded.choice.yes")),
+              checked = form("choice").value.contains("yes")
+            ),
+            RadioItem(
+              value = Some("no"),
+              content = Text(messages("form.file-uploaded.choice.no")),
+              checked = form("choice").value.contains("no"),
+              conditionalHtml = None
+            )
+          ),
+          legend = yesNoQuestionText,
+          legendAsHeading = false,
+          legendAsH2 = false,
+          legendClasses = ""
+        )
+      }
+
       @html.button("form.upload-multiple-files.continue")
     </div>
 

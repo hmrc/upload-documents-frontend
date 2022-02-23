@@ -102,7 +102,7 @@ object FormFieldMappings {
 
   val allowedSpecialNameCharacterSet = Set(' ', '/', '\\', '_', '-', '&', '+', '\'', '.', '’')
 
-  val uploadAnotherFileMapping: Mapping[Boolean] = booleanMapping("uploadAnotherFile", "yes", "no")
+  val yesNoMapping: Mapping[Boolean] = booleanMapping("choice", "yes", "no")
 
   val allowedResponseSpecialCharacters = " ()/+-*=^.;_&#@!?\"'{}[]\\~|%£$€"
 

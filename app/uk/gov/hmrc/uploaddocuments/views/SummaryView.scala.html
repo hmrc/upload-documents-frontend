@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,CustomizedServiceContent}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,CustomizedServiceContent,Features}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.SummaryViewHelper
 
@@ -35,7 +35,7 @@
   previewFileCall: (String,String) => Call, 
   removeFileCall: String => Call, 
   backLink: Call
-)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+)(implicit request: Request[_], messages: Messages, features: Features, serviceContent: CustomizedServiceContent)
 
 @conditionalContent = {
   @html.p(
@@ -72,25 +72,27 @@
 
     @forms.inputRadio(
       form = form,
-      idPrefix = "uploadAnotherFile",
-      name = "uploadAnotherFile",
+      idPrefix = "choice",
+      name = "choice",
+      inline = true,
       items = Seq(
         RadioItem(
           value = Some("yes"),
-          content = Text(messages("form.file-uploaded.uploadAnotherFile.yes")),
-          checked = form("uploadAnotherFile").value.contains("yes")
+          content = Text(messages("form.file-uploaded.choice.yes")),
+          checked = form("choice").value.contains("yes")
         ),
         RadioItem(
           value = Some("no"),
-          content = Text(messages("form.file-uploaded.uploadAnotherFile.no")),
-          checked = form("uploadAnotherFile").value.contains("no"),
+          content = Text(messages("form.file-uploaded.choice.no")),
+          checked = form("choice").value.contains("no"),
           conditionalHtml = None
         )
       ),
-      legend = Some(if(fileUploads.isEmpty) "view.summary.uploadFile.heading" else "view.summary.uploadAnotherFile.heading"),
+      legend = if(features.showYesNoQuestionBeforeContinue) serviceContent.yesNoQuestionText
+        else Some(if(fileUploads.isEmpty) "view.summary.uploadFile.heading" else "view.summary.uploadAnotherFile.heading"),
       legendAsHeading = false,
-      legendAsH2 = true,
-      legendClasses = "govuk-fieldset__legend--m"
+      legendAsH2 = false,
+      legendClasses = ""
     )
 
     @html.button("form.file-uploaded.continue")

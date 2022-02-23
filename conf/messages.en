@@ -155,9 +155,9 @@ view.summary.maximum=You can upload up to {0} files.
 
 form.upload-file.file=Upload a file
 form.upload-file.submit=Upload
-form.file-uploaded.uploadAnotherFile.yes=Yes
-form.file-uploaded.uploadAnotherFile.no=No
-form.file-uploaded.uploadAnotherFile.noConditional=By continuing, you will now submit all the documents you’ve uploaded
+form.file-uploaded.choice.yes=Yes
+form.file-uploaded.choice.no=No
+form.file-uploaded.choice.noConditional=By continuing, you will now submit all the documents you’ve uploaded
 form.file-uploaded.continue=Continue
 form.upload-multiple-files.continue=Continue
 
@@ -169,7 +169,7 @@ error.file-upload.quarantine=The selected file contains a virus - upload a diffe
 error.file-upload.unknown=The selected file could not be uploaded
 error.file-upload.try-again=The selected file could not be uploaded - try again
 error.file-upload.remove.try-again=The selected file could not be removed - try again
-error.uploadAnotherFile.required=Select yes if you want to upload another document
+error.choice.required=Select yes if you want to upload another document
 error.file-upload.duplicate=The selected file has already been uploaded
 
 # Common form messages

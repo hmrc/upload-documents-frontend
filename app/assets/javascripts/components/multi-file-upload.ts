@@ -51,7 +51,8 @@ export class MultiFileUpload extends Component {
       invalidTypeError: form.dataset.multiFileUploadErrorInvalidType,
       chooseFirstFileLabel: form.dataset.multiFileUploadChooseFirstFileLabel,
       chooseNextFileLabel: form.dataset.multiFileUploadChooseNextFileLabel,
-      newFileDescription: form.dataset.multiFileUploadNewFileDescription
+      newFileDescription: form.dataset.multiFileUploadNewFileDescription,
+      initialError: form.dataset.multiFileUploadInitialError
     };
 
     this.classes = {
@@ -79,6 +80,10 @@ export class MultiFileUpload extends Component {
 
     this.errorManager = new ErrorManager();
 
+    if (this.messages.initialError) {
+      this.errorManager.addError("initial", this.messages.initialError);
+    }
+
     this.cacheElements();
     this.cacheTemplates();
     this.bindEvents();
@@ -89,7 +94,7 @@ export class MultiFileUpload extends Component {
     this.addAnotherBtn = this.container.querySelector(`.${this.classes.addAnother}`);
     this.uploadMoreMessage = this.container.querySelector(`.${this.classes.uploadMore}`);
     this.formStatus = this.container.querySelector(`.${this.classes.formStatus}`);
-    this.submitBtn = this.container.querySelector(`.${this.classes.submitBtn}`);
+    this.submitBtn = this.container.querySelector(`.${this.classes.submit}`);
     this.notifications = this.container.querySelector(`.${this.classes.notifications}`);
   }
 
@@ -154,29 +159,30 @@ export class MultiFileUpload extends Component {
   }
 
   private handleSubmit(e: Event): void {
-    e.preventDefault();
+
 
     this.updateFormStatusVisibility(this.isBusy());
 
     if (this.errorManager.hasErrors()) {
       this.errorManager.focusSummary();
-
+      e.preventDefault();
       return;
     }
 
     if (this.isInProgress()) {
       this.addNotification(this.messages.stillTransferring);
-
+      e.preventDefault();
       return;
     }
 
     if (this.container.querySelectorAll(`.${this.classes.uploaded}`).length >= this.config.minFiles) {
-      window.location.href = this.config.actionUrl;
+      //window.location.href = this.config.actionUrl;
     }
     else {
       const firstFileInput = this.itemList.querySelector(`.${this.classes.file}`);
       this.errorManager.addError(firstFileInput.id, this.messages.noFilesUploadedError);
       this.errorManager.focusSummary();
+      e.preventDefault();
     }
   }
 
@@ -737,25 +743,32 @@ export class MultiFileUpload extends Component {
 
   private setItemState(item: HTMLElement, uploadState: UploadState): void {
     const file = this.getFileFromItem(item);
-    item.classList.remove(this.classes.waiting, this.classes.uploading, this.classes.verifying, this.classes.uploaded, this.classes.removing);
 
     file.disabled = uploadState !== UploadState.Default;
 
     switch (uploadState) {
       case UploadState.Waiting:
         item.classList.add(this.classes.waiting);
+        item.classList.remove(this.classes.uploading, this.classes.verifying, this.classes.uploaded, this.classes.removing);
         break;
       case UploadState.Uploading:
         item.classList.add(this.classes.uploading);
+        item.classList.remove(this.classes.waiting, this.classes.verifying, this.classes.uploaded, this.classes.removing);
         break;
       case UploadState.Verifying:
         item.classList.add(this.classes.verifying);
+        item.classList.remove(this.classes.waiting, this.classes.uploading, this.classes.uploaded, this.classes.removing);
         break;
       case UploadState.Uploaded:
         item.classList.add(this.classes.uploaded);
+        item.classList.remove(this.classes.waiting, this.classes.uploading, this.classes.verifying, this.classes.removing);
         break;
       case UploadState.Removing:
         item.classList.add(this.classes.removing);
+        item.classList.remove(this.classes.waiting, this.classes.uploading, this.classes.verifying, this.classes.uploaded);
+        break;
+      case UploadState.Default:
+        item.classList.remove(this.classes.waiting, this.classes.uploading, this.classes.verifying, this.classes.uploaded, this.classes.removing);
         break;
     }
   }

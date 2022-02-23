@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.libs.json.Json
 import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 import uk.gov.hmrc.uploaddocuments.support.WireMockSupport
+import java.util.UUID
 
 trait ExternalApiStubs {
   me: WireMockSupport =>
@@ -39,7 +40,8 @@ trait ExternalApiStubs {
     url
   }
 
-  def givenSomePage(status: Int, path: String, content: String): Unit =
+  def givenSomePage(status: Int, path: String): String = {
+    val content: String = UUID.randomUUID().toString()
     stubFor(
       get(urlPathEqualTo(path))
         .willReturn(
@@ -49,6 +51,8 @@ trait ExternalApiStubs {
             .withBody(content)
         )
     )
+    content
+  }
 
   def givenResultPushEndpoint(path: String, payload: FileUploadResultPushConnector.Payload, status: Int): Unit =
     stubFor(

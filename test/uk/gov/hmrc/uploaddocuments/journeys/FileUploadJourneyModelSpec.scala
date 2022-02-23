@@ -205,6 +205,50 @@ class FileUploadJourneyModelSpec
         )
       }
 
+      "go to Initialized when non-empty file uploads and continue with yes" in {
+        given(
+          UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)
+        ) when continueWithYesNo(true) should thenGo(
+          Initialized(fileUploadContext, nonEmptyFileUploads)
+        )
+      }
+
+      "go to Initialized when empty file uploads and continue with yes transition" in {
+        given(
+          UploadMultipleFiles(
+            fileUploadContext,
+            FileUploads()
+          )
+        ) when continueWithYesNo(true) should thenGo(
+          Initialized(
+            fileUploadContext,
+            FileUploads()
+          )
+        )
+      }
+
+      "go to ContinueToHost when non-empty file uploads and continue with no" in {
+        given(
+          UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)
+        ) when continueWithYesNo(false) should thenGo(
+          ContinueToHost(fileUploadContext, nonEmptyFileUploads)
+        )
+      }
+
+      "go to ContinueToHost when empty file uploads and continue with no transition" in {
+        given(
+          UploadMultipleFiles(
+            fileUploadContext,
+            FileUploads()
+          )
+        ) when continueWithYesNo(false) should thenGo(
+          ContinueToHost(
+            fileUploadContext,
+            FileUploads()
+          )
+        )
+      }
+
       "stay and filter accepted uploads when toUploadMultipleFiles transition" in {
         given(
           UploadMultipleFiles(

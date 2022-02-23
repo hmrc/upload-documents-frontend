@@ -23,12 +23,22 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.mvc.Headers
 import play.api.mvc.RequestHeader
 import java.util.UUID
+import play.api.i18n.Messages
+import uk.gov.hmrc.uploaddocuments.support.EnhancedMessages
 
 final case class FileUploadContext(
   config: FileUploadSessionConfig,
   hostService: HostService = HostService.Any
 ) {
   def isValid: Boolean = config.isValid && hostService.userAgent.nonEmpty
+
+  implicit val content: CustomizedServiceContent = config.content
+  implicit val features: Features = config.features
+
+  def messages(implicit m: Messages): Messages =
+    if (config.content.yesNoQuestionRequiredError.isDefined)
+      new EnhancedMessages(m, Map("error.choice.required" -> config.content.yesNoQuestionRequiredError.getOrElse("")))
+    else m
 }
 
 sealed trait HostService {

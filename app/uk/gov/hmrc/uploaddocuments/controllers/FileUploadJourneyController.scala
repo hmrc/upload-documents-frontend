@@ -128,6 +128,17 @@ class FileUploadJourneyController @Inject() (
         case e                     => InternalServerError
       }
 
+  // GET /
+  final val start: Action[AnyContent] =
+    action { implicit request =>
+      Future.successful(
+        if (preferUploadMultipleFiles)
+          Redirect(routes.FileUploadJourneyController.showChooseMultipleFiles)
+        else
+          Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
+      )
+    }
+
   // GET /continue-to-host
   final val continueToHost: Action[AnyContent] =
     whenAuthenticated
@@ -148,17 +159,6 @@ class FileUploadJourneyController @Inject() (
       .apply(Transitions.wipeOut)
       .displayUsing(renderWipeOutResponse)
       .andCleanBreadcrumbs()
-
-  // GET /
-  final val start: Action[AnyContent] =
-    action { implicit request =>
-      Future.successful(
-        if (preferUploadMultipleFiles)
-          Redirect(routes.FileUploadJourneyController.showChooseMultipleFiles)
-        else
-          Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
-      )
-    }
 
   // GET /choose-files
   final val showChooseMultipleFiles: Action[AnyContent] =

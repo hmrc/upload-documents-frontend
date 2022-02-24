@@ -2,27 +2,46 @@
 
 # upload-documents-frontend
 
-Plug&Play customizable frontend microservice for uploading documents to the Upscan. 
+Plug&Play customizable frontend microservice for uploading documents to the Upscan.
+
+File upload session is attached to the initial Session-ID and defined by the latest initialization request, making it fully parametrizable and customizable by the invoking host service.
+
+- [Integration guide](#integration-guide)
+   - [Step-by-step](#step-by-step)
+   - [Callback schema](#callback-payload-schema)
+   - [File metadata](#file-metadata-schema)
+   - [Session configuration](#upload-session-configuration-schema)
+   - [Session content customization](#upload-session-content-customization-schema)
+   - [Session features customization](#upload-session-features-schema)
+   - [I18n of the content](#internationalization)
+- [Sequence diagrams](#sequence-diagrams)
+- [API](#api)
+   - [/initialize](#post-initialize)
+   - [/wipe-out](#post-wipe-out)
+- [Design gallery](#design-gallery)   
+- [Development](#development)   
 
 ## Features:
 - UI to upload multiple files on a single page
 - Non-JS UI version for uploading one file per page
-- Per-host customization
+- Per-host per-session customization
 
 ## Glossary
 
 - **UDF**: upload-documents-frontend service/journey
-- **Host**, **Host service**: some frontend microservice integrating with upload-documents-frontend
+- **Host**, **Host service**: some frontend microservice integrating with upload-documents-frontend and calling /initialize endpoint
 - **Upscan**: dedicated MDTP subsystem responsible for hosting and verifying uploaded files
 
 ## Integration guide
 
-Reference implementation of the UDF integration can be found in the https://github.com/hmrc/cds-reimbursement-claim-frontend/
+An example implementation of the UDF integration can be found in the CDS-R service: 
+- Connector: https://github.com/hmrc/cds-reimbursement-claim-frontend/blob/main/app/uk/gov/hmrc/cdsreimbursementclaimfrontend/connectors/UploadDocumentsConnector.scala
+- Controller: https://github.com/hmrc/cds-reimbursement-claim-frontend/blob/main/app/uk/gov/hmrc/cdsreimbursementclaimfrontend/controllers/rejectedgoodssingle/UploadFilesController.scala
 
 ### Prerequisites
 - configuration of the Upscan services profile for the host microservice
 
-### Tasks
+### Step-by-step
 
 1. implement a backchannel connector to the UDF calling [`https://upload-documents-frontend.public.mdtp/internal/initialize`](#api-initialize) endpoint,
 
@@ -58,6 +77,12 @@ Locally you should use `http://localhost:10100` instead of `https://upload-docum
 |`cargo`|any|optional|An opaque JSON carried from and to the host service|
 |`description`|string|optional|File description in the limited HMTL format allowing use of `b`, `em`, `i`, `strong`, `u`, `span` tags only|
 |`previewUrl`|string|optional|An MDTP URL of the file preview endpoint, safe to show, valid only insider the upload session |
+
+### Internationalization
+
+The service comes with built-in English and Welsh messages, and an optional language switch link. 
+
+All messages supplied in the initialization request must come in the proper variant as they will be displayed as-is.
 
 ## Sequence diagrams
 
@@ -188,6 +213,39 @@ Requires an `Authorization` and `X-Session-ID` headers, usually supplied transpa
 |:----:|-----------|
 |204   | Success |
 |403   | Unauthorized request |
+
+## Design gallery
+
+#### Error messages summary
+
+![](/docs/choose-files-error-messages.png)
+
+#### Upload files page with an initial single row
+Next input rows will keep adding automatically up to the configured maximum number.
+
+![](/docs/choose-files-variant-2.png)
+
+
+#### Upload files page with Yes/No question form
+Yes/No form allows to steer user back to the file type selection or any other relevant page.
+![](/docs/choose-files-variant-1.png)
+
+
+#### Upload files page with AddAnotherDocument button
+Clicking on the button will add next input row up to the configured maximum number.
+![](/docs/choose-files-variant-3.png)
+
+
+#### Upload files page with AddAnotherDocument button and Yes/No form
+It is possible to have both button and the form. The page can be configured to show always more than a single input row. 
+
+![](/docs/choose-files-variant-4.png)
+
+
+#### Upload files page with different input row labels.
+Each uploaded file can be marked with a label. Each empty input row can have a label. First and next empty rows can have different labels.
+
+![](/docs/choose-files-variant-5.png)
 
 ## Development
 

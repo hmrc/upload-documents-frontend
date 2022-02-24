@@ -42,9 +42,9 @@ final case class CustomizedServiceContent(
   fileUploadedProgressBarLabel: Option[String] = None,
   chooseFirstFileLabel: Option[String] = None,
   chooseNextFileLabel: Option[String] = None,
-  showLanguageSelection: Boolean = true,
-  showAddAnotherDocumentButton: Boolean = false,
-  addAnotherDocumentButtonText: Option[String] = None
+  addAnotherDocumentButtonText: Option[String] = None,
+  yesNoQuestionText: Option[String] = None,
+  yesNoQuestionRequiredError: Option[String] = None
 ) {
 
   def safeDescriptionHtml: Option[String] =
@@ -63,6 +63,6 @@ object CustomizedServiceContent {
   }
 
   implicit val format: Format[CustomizedServiceContent] =
-    Json.using[Json.WithDefaultValues].format[CustomizedServiceContent]
+    Json.format[CustomizedServiceContent]
 
 }

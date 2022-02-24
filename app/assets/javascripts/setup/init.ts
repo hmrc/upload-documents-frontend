@@ -7,8 +7,6 @@ export default function
   GOVUKFrontend.initAll();
   HMRCFrontend.initAll();
 
-  document.cookie = 'jsenabled=true; path=/';
-
   Array
     .from(document.querySelectorAll('button[data-disable-after-click="true"]'))
     .forEach(element => {

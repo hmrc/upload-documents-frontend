@@ -85,6 +85,475 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
+    "GET /continue-to-host" should {
+      "redirect to the continueUrl if non empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").get())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+      }
+
+      "redirect to the continueUrl if empty file uploads and no continueWhenEmptyUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").get())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+      }
+
+      "redirect to the continueWhenEmptyUrl if empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-empty")
+
+        val result = await(request("/continue-to-host").get())
+
+        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+      }
+
+      "redirect to the continueUrl if full file uploads and no continueWhenFullUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").get())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the continueWhenFullUrl if full file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-full")
+
+        val result = await(request("/continue-to-host").get())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+    }
+
+    "POST /continue-to-host" should {
+      "redirect to the continueUrl if answer is no and non empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+      }
+
+      "redirect to the continueUrl if answer is no and empty file uploads and no continueWhenEmptyUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+      }
+
+      "redirect to the continueWhenEmptyUrl if answer is no and empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-empty")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
+
+        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+      }
+
+      "redirect to the continueUrl if answer is no and full file uploads and no continueWhenFullUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the continueWhenFullUrl if answer is no and full file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-full")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe ContinueToHost(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the backlinkUrl if answer is yes and non empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/backlink-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+      }
+
+      "redirect to the backlinkUrl if answer is yes and empty file uploads and no continueWhenEmptyUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/backlink-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+      }
+
+      "redirect to the backlinkUrl if answer is yes and empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/backlink-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+      }
+
+      "redirect to the backlinkUrl if answer is yes and full file uploads and no continueWhenFullUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/backlink-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the backlinkUrl if answer is yes and full file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/backlink-url")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the continueAfterYesAnswerUrl if answer is yes and non empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full"),
+              continueAfterYesAnswerUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-yes")
+            )
+        )
+        val state = ContinueToHost(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-yes")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nonEmptyFileUploads
+        )
+      }
+
+      "redirect to the continueAfterYesAnswerUrl if answer is yes and empty file uploads and no continueWhenEmptyUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full"),
+              continueAfterYesAnswerUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-yes")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-yes")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+      }
+
+      "redirect to the continueAfterYesAnswerUrl if answer is yes and empty file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full"),
+              continueAfterYesAnswerUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-yes")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = FileUploads())
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-yes")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+      }
+
+      "redirect to the continueAfterYesAnswerUrl if answer is yes and full file uploads and no continueWhenFullUrl" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueAfterYesAnswerUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-yes")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-yes")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+
+      "redirect to the continueAfterYesAnswerUrl if answer is yes and full file uploads" in {
+        val context = FileUploadContext(
+          fileUploadSessionConfig
+            .copy(
+              continueWhenEmptyUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-empty"),
+              continueWhenFullUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-full"),
+              continueAfterYesAnswerUrl = Some(s"$wireMockBaseUrlAsString/continue-url-if-yes")
+            )
+        )
+        val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val expected = givenSomePage(200, "/continue-url-if-yes")
+
+        val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
+
+        result.status shouldBe 200
+        result.body shouldBe expected
+
+        journey.getState shouldBe Initialized(
+          context,
+          fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
+        )
+      }
+    }
+
     "POST /initialize" should {
       "return 404 if wrong http method" in {
         journey.setState(Uninitialized)
@@ -934,7 +1403,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "show file upload summary view" in {
         val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
+          fileUploads = nFileUploads(FILES_LIMIT)
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
@@ -965,7 +1434,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result = await(
           request("/summary")
-            .post(Map("uploadAnotherFile" -> "yes"))
+            .post(Map("choice" -> "yes"))
         )
 
         result.status shouldBe 200
@@ -1012,7 +1481,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result = await(
           request("/summary")
-            .post(Map("uploadAnotherFile" -> "yes"))
+            .post(Map("choice" -> "yes"))
         )
 
         result.status shouldBe 200
@@ -1046,18 +1515,18 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "redirect to the continue_url when yes and files number limit has been reached" in {
 
-        val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
+        val fileUploads = nFileUploads(FILES_LIMIT)
         val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-        givenSomePage(200, "/continue-url", "Welcome back at host 1!")
+        val expected = givenSomePage(200, "/continue-url")
 
         val result = await(
           request("/summary")
-            .post(Map("uploadAnotherFile" -> "yes"))
+            .post(Map("choice" -> "yes"))
         )
 
         journey.getState shouldBe ContinueToHost(
@@ -1066,7 +1535,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         result.status shouldBe 200
-        result.body shouldBe "Welcome back at host 1!"
+        result.body shouldBe expected
       }
 
       "redirect to the continue_url when no and files number below the limit" in {
@@ -1078,11 +1547,11 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-        givenSomePage(200, "/continue-url", "Welcome back at host 2!")
+        val expected = givenSomePage(200, "/continue-url")
 
         val result = await(
           request("/summary")
-            .post(Map("uploadAnotherFile" -> "no"))
+            .post(Map("choice" -> "no"))
         )
 
         journey.getState shouldBe ContinueToHost(
@@ -1091,23 +1560,22 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         result.status shouldBe 200
-        result.body shouldBe "Welcome back at host 2!"
+        result.body shouldBe expected
       }
 
       "redirect to the continue_url when no and files number above the limit" in {
-
-        val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
+        val fileUploads = nFileUploads(FILES_LIMIT)
         val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-        givenSomePage(200, "/continue-url", "Welcome back at host 3!")
+        val expected = givenSomePage(200, "/continue-url")
 
         val result = await(
           request("/summary")
-            .post(Map("uploadAnotherFile" -> "no"))
+            .post(Map("choice" -> "no"))
         )
 
         journey.getState shouldBe ContinueToHost(
@@ -1116,7 +1584,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         result.status shouldBe 200
-        result.body shouldBe "Welcome back at host 3!"
+        result.body shouldBe expected
       }
     }
 
@@ -1930,5 +2398,24 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
       )
       .addHttpHeaders(play.api.http.HeaderNames.USER_AGENT -> "it-test")
   }
+
+  val nonEmptyFileUploads = FileUploads(files =
+    Seq(
+      FileUpload.Accepted(
+        Nonce.Any,
+        Timestamp.Any,
+        "f029444f-415c-4dec-9cf2-36774ec63ab8",
+        "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
+        ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+        "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
+        "test.pdf",
+        "application/pdf",
+        4567890
+      )
+    )
+  )
+
+  def nFileUploads(n: Int): FileUploads =
+    FileUploads(files = for (i <- 1 to n) yield TestData.acceptedFileUpload)
 
 }

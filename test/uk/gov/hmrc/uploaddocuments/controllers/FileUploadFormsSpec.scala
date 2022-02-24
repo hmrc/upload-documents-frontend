@@ -24,11 +24,11 @@ class FileUploadFormsSpec extends UnitSpec with FormValidator {
 
   "UploadAnotherFileChoiceForm" should {
     "bind uploadAnotherFile choice and fill it back" in {
-      val form = FileUploadJourneyController.UploadAnotherFileChoiceForm
-      validate(form, Map("uploadAnotherFile" -> "yes"), true)
-      validate(form, Map("uploadAnotherFile" -> "no"), false)
-      validate(form, "uploadAnotherFile", Map(), Seq("error.uploadAnotherFile.required"))
-      validate(form, "uploadAnotherFile", Map("uploadAnotherFile" -> "foo"), Seq("error.uploadAnotherFile.required"))
+      val form = FileUploadJourneyController.YesNoChoiceForm
+      validate(form, Map("choice" -> "yes"), true)
+      validate(form, Map("choice" -> "no"), false)
+      validate(form, "choice", Map(), Seq("error.choice.required"))
+      validate(form, "choice", Map("choice" -> "foo"), Seq("error.choice.required"))
     }
   }
 

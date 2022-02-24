@@ -28,6 +28,8 @@ final case class FileUploadSessionConfig(
   continueUrl: String, // url to continue after uploading the files
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
+  continueAfterYesAnswerUrl: Option[String] =
+    None, // optional url to continue after user selects YES answer in the form
   continueWhenFullUrl: Option[String] = None, // optional url to continue after all possible files has been uploaded
   continueWhenEmptyUrl: Option[String] = None, // optional url to continue after none file uploaded
   minimumNumberOfFiles: Int = defaultMinimumNumberOfFiles,
@@ -52,12 +54,12 @@ final case class FileUploadSessionConfig(
       isValidFrontendUrl(backlinkUrl) &&
       continueWhenFullUrl.map(isValidFrontendUrl).getOrElse(true) &&
       continueWhenEmptyUrl.map(isValidFrontendUrl).getOrElse(true) &&
+      continueAfterYesAnswerUrl.map(isValidFrontendUrl).getOrElse(true) &&
       allowedContentTypes.nonEmpty &&
       minimumNumberOfFiles >= 0 &&
       maximumNumberOfFiles >= 1 &&
       maximumNumberOfFiles >= minimumNumberOfFiles &&
       maximumFileSizeBytes > 0
-
 }
 
 object FileUploadSessionConfig {
@@ -74,6 +76,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueUrl").read[String]
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
+        and (JsPath \ "continueAfterYesAnswerUrl").readNullable[String]
         and (JsPath \ "continueWhenFullUrl").readNullable[String]
         and (JsPath \ "continueWhenEmptyUrl").readNullable[String]
         and (JsPath \ "minimumNumberOfFiles").readWithDefault[Int](defaultMinimumNumberOfFiles)
@@ -91,6 +94,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueUrl").write[String]
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
+        and (JsPath \ "continueAfterYesAnswerUrl").writeNullable[String]
         and (JsPath \ "continueWhenFullUrl").writeNullable[String]
         and (JsPath \ "continueWhenEmptyUrl").writeNullable[String]
         and (JsPath \ "minimumNumberOfFiles").write[Int]

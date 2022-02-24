@@ -108,16 +108,17 @@ Minimal payload example:
 |`existingFiles`|array|optional|Initial collection of already uploaded [FileMetadata](#filemetadata)|
 
 <a name="api-initialize-payload-config"></a>
-#### Upload session configuration schema, all fields are optional:
+#### Upload session configuration schema:
 
 |field|type|required|description|
 |-----|----|--------|-----------|
 |`nonce`|number|required|Unique integer known only to the host session|
-|`continueUrl`|string|required|A host URL where to proceed after user clicks continue|
+|`continueUrl`|string|required|A host URL where to proceed after user clicks `Continue` button|
 |`backlinkUrl`|string|required|A host URL where to retreat when user clicks backlink|
 |`callbackUrl`|string|required|A host URL where to push a callback with the uploaded files metadata|
-|`continueWhenFullUrl`|string|optional|A host URL where to proceed after user clicks continue and there are no more file slots left, defaults to `continueUrl`|
-|`continueWhenEmptyUrl`|string|optional|A host URL where to proceed after user clicks continue and none file has been uploaded yet, defaults to `continueUrl`|
+|`continueAfterYesAnswerUrl`|string|optional|A host URL where to redirect after user selects `Yes`, defaults to `backlinkUrl`.|
+|`continueWhenFullUrl`|string|optional|A host URL where to proceed after user clicks `Continue` (or selects `No` in the form) and there are no more file slots left, defaults to `continueUrl`|
+|`continueWhenEmptyUrl`|string|optional|A host URL where to proceed after user clicks `Continue` (or selects `No` in the form) and none file has been uploaded yet, defaults to `continueUrl`|
 |`minimumNumberOfFiles`|number|optional|Minimum number of files user can upload, usually 0 or 1, defaults to 1|
 |`maximumNumberOfFiles`|number|optional|Maximum number of files user can upload, defaults to 10|
 |`initialNumberOfEmptyRows`|number|optional|Initial number of empty choose file rows, defaults to 3|
@@ -127,45 +128,52 @@ Minimal payload example:
 |`newFileDescription`|string|optional|Template of description of a new file in a limited HMTL format allowing use of `b`, `em`, `i`, `strong`, `u`, `span` tags only|
 |`cargo`|any|optional|An opaque JSON carried from and to the host service|
 |[`content`](#api-initialize-payload-config-content)|object|optional|Content customization|
-|[`features`](#api-initialize-payload-config-features)|object|optional|Features customisation|
+|[`features`](#api-initialize-payload-config-features)|object|optional|Features customization|
 
 <a name="api-initialize-payload-config-content"></a>
 #### Upload session content customization schema:
 
-![](docs/choose-file-customization-properties.png)
+![](docs/choose-file-customization-properties-1.png)
+![](docs/choose-file-customization-properties-2.png)
 
+*All fields listed in the table are **optional**.*
 
-|field|type|required|description|
-|-----|----|--------|-----------|
-|`serviceName`|string|optional|Service name to display in the header bar and title|
-|`title`|string|optional|Upload page title|
-|`descriptionHtml`|string|optional|Description in a limited HTML format allowing use of`div`, `p`, `span`, `br`, `ol`, `ul`, `li`, `dd`, `dl`, `dt`, `i`, `b`, `em`, `strong` tags only|
-|`serviceUrl`|string|optional|Header bar URL pointing to the host service|
-|`accessibilityStatementUrl`|string|optional|Footer URL of  a host service accessibilty statement|
-|`phaseBanner`|string|optional|Phase banner type, either `alpha`, `beta` or none|
-|`phaseBannerUrl`|string|optional|An URL connected with phase banner|
-|`userResearchBannerUrl`|string|optional|An URL connected with user research banner, UDF will show the banner if present|
-|`signOutUrl`|string|optional|Custom sign out URL|
-|`timedOutUrl`|string|optional|Custom URL of a timed out page|
-|`keepAliveUrl`|string|optional|An URL where to send keep-alive beats|
-|`timeoutSeconds`|number|optional|Custom page timeout|
-|`countdownSeconds`|number|optional|Custom page countdown|
-|`showLanguageSelection`|boolean|optional|Whether to show language change link in the UDF|
-|`pageTitleClasses`|string|optional|Customized page heading classes|
-|`allowedFilesTypesHint`|string|optional|A hint text to display for invalid uploads|
-|`contactFrontendServiceId`|string|optional|A `serviceId` for HmrcReportTechnicalIssue component|
-|`fileUploadedProgressBarLabel`|string|optional|Progress bar label displayed when file uploaded, defaults to `Ready to submit`|
-|`chooseFirstFileLabel`|string|optional|The label of the first file-input element. If files have descriptions then the label of the first file-input with description as defined in `newFileDescription`|
-|`chooseNextFileLabel`|string|optional|The label of each next file-input element|
-|`showAddAnotherDocumentButton`|boolean|optional|If `true` then shows `Add Another Document` on the /choose-files page. If `false` then instead automatically adds an empty file input row when needed. |
-|`addAnotherDocumentButtonText`|string|optional|The text of the `Add Another Document` button, if enabled.|
+|field|type|description|
+|-----|----|-----------|
+|`serviceName`|string|Service name to display in the header bar and title|
+|`title`|string|Upload page title|
+|`descriptionHtml`|string|Description in a limited HTML format allowing use of`div`, `p`, `span`, `br`, `ol`, `ul`, `li`, `dd`, `dl`, `dt`, `i`, `b`, `em`, `strong` tags only|
+|`serviceUrl`|string|Header bar URL pointing to the host service|
+|`accessibilityStatementUrl`|string|Footer URL of  a host service accessibilty statement|
+|`phaseBanner`|string|Phase banner type, either `alpha`, `beta` or none|
+|`phaseBannerUrl`|string|An URL connected with phase banner|
+|`userResearchBannerUrl`|string|An URL connected with user research banner, UDF will show the banner if present|
+|`signOutUrl`|string|Custom sign out URL|
+|`timedOutUrl`|string|Custom URL of a timed out page|
+|`keepAliveUrl`|string|An URL where to send keep-alive beats|
+|`timeoutSeconds`|number|Custom page timeout|
+|`countdownSeconds`|number|Custom page countdown|
+|`pageTitleClasses`|string|Customized page heading classes|
+|`allowedFilesTypesHint`|string|A hint text to display for invalid uploads|
+|`contactFrontendServiceId`|string|A `serviceId` for HmrcReportTechnicalIssue component|
+|`fileUploadedProgressBarLabel`|string|Progress bar label displayed when file uploaded, defaults to `Ready to submit`|
+|`chooseFirstFileLabel`|string|The label of the first file-input element. If files have descriptions then the label of the first file-input with description as defined in `newFileDescription`|
+|`chooseNextFileLabel`|string|The label of each next file-input element|
+|`addAnotherDocumentButtonText`|string|The text of the `Add Another Document` button, if enabled|
+|`yesNoQuestionText`|string|optional|The text of the Yes/No question displayed before the `Continue` button if `showYesNoQuestionBeforeContinue` enabled.|
+|`yesNoQuestionRequiredError`|string|optional|The text of the error displayed when user didn't provide an answer to the Yes/No question|
 
 <a name="api-initialize-payload-config-features"></a>
-#### Upload session features customization schema:
+#### Upload session features schema:
 
-|field|type|required|description|
-|-----|----|--------|-----------|
-|`showUploadMultiple`|boolean|optional|Whether to show choose multiple files or single file per page upload, defaults to `true`|
+*All fields listed in the table are **optional**.*
+
+|field|type|description|default|
+|-----|----|-----------|-------|
+|`showUploadMultiple`|boolean|Whether to show choose multiple files or single file per page upload|`true`|
+|`showLanguageSelection`|boolean|Whether to show language change link in the UDF|`true`|
+|`showAddAnotherDocumentButton`|boolean|If `true` then shows `Add Another Document` on the /choose-files page. If `false` then instead automatically adds an empty file input row when needed|`false`|
+|`showYesNoQuestionBeforeContinue`|boolean|If `true` then displays the **Yes**/**No** form before the `Continue` button. Selecting `Yes` will redirect to the `continueAfterYesAnswerUrl` or `backlinkUrl`. Selecting `No` will redirect to the `continueUrl`. Single file upload summary Yes/No form behaviour will be altered accordingly|`false`|
 
 <a name="api-wipe-out"></a>
 ### POST /wipe-out

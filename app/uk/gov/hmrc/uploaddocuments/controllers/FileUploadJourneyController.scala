@@ -17,6 +17,7 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.{ActorSystem, Scheduler}
+import com.fasterxml.jackson.core.JsonParseException
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
@@ -31,7 +32,6 @@ import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
-import com.fasterxml.jackson.core.JsonParseException
 
 @Singleton
 class FileUploadJourneyController @Inject() (
@@ -128,20 +128,6 @@ class FileUploadJourneyController @Inject() (
         case e                     => InternalServerError
       }
 
-  // GET /continue-to-host
-  final val continueToHost: Action[AnyContent] =
-    whenAuthenticated
-      .show[State.ContinueToHost]
-      .orApply(Transitions.continueToHost)
-      .andCleanBreadcrumbs()
-
-  // POST /wipe-out
-  final val wipeOut: Action[AnyContent] =
-    whenAuthenticatedInBackchannel
-      .apply(Transitions.wipeOut)
-      .displayUsing(renderWipeOutResponse)
-      .andCleanBreadcrumbs()
-
   // GET /
   final val start: Action[AnyContent] =
     action { implicit request =>
@@ -152,6 +138,27 @@ class FileUploadJourneyController @Inject() (
           Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
       )
     }
+
+  // GET /continue-to-host
+  final val continueToHost: Action[AnyContent] =
+    whenAuthenticated
+      .show[State.ContinueToHost]
+      .orApply(Transitions.continueToHost)
+      .andCleanBreadcrumbs()
+
+  // POST /continue-to-host
+  final val continueWithYesNo: Action[AnyContent] =
+    whenAuthenticated
+      .bindForm[Boolean](YesNoChoiceForm)
+      .apply(Transitions.continueWithYesNo)
+      .andCleanBreadcrumbs()
+
+  // POST /wipe-out
+  final val wipeOut: Action[AnyContent] =
+    whenAuthenticatedInBackchannel
+      .apply(Transitions.wipeOut)
+      .displayUsing(renderWipeOutResponse)
+      .andCleanBreadcrumbs()
 
   // GET /choose-files
   final val showChooseMultipleFiles: Action[AnyContent] =
@@ -253,7 +260,7 @@ class FileUploadJourneyController @Inject() (
   // POST /summary
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthenticated
-      .bindForm[Boolean](UploadAnotherFileChoiceForm)
+      .bindForm[Boolean](YesNoChoiceForm)
       .applyWithRequest { implicit request =>
         Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_, _))(
           Transitions.continueToHost
@@ -294,7 +301,11 @@ class FileUploadJourneyController @Inject() (
   final override def getCallFor(state: State)(implicit request: Request[_]): Call =
     state match {
       case State.Initialized(context, fileUploads) =>
-        Call("GET", context.config.backlinkUrl)
+        Call(
+          "GET",
+          context.config.continueAfterYesAnswerUrl
+            .getOrElse(context.config.backlinkUrl)
+        )
 
       case State.ContinueToHost(context, fileUploads) =>
         controller.continueToHost
@@ -338,13 +349,12 @@ class FileUploadJourneyController @Inject() (
       case State.ContinueToHost(context, fileUploads) =>
         if (fileUploads.acceptedCount == 0)
           Redirect(context.config.getContinueWhenEmptyUrl)
-        if (fileUploads.acceptedCount >= context.config.maximumNumberOfFiles)
+        else if (fileUploads.acceptedCount >= context.config.maximumNumberOfFiles)
           Redirect(context.config.getContinueWhenFullUrl)
         else
           Redirect(context.config.continueUrl)
 
       case State.UploadMultipleFiles(context, fileUploads) =>
-        implicit val content = context.config.content
         Ok(
           views.uploadMultipleFilesView(
             minimumNumberOfFiles = context.config.minimumNumberOfFiles,
@@ -362,13 +372,19 @@ class FileUploadJourneyController @Inject() (
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
-            continueAction = controller.continueToHost,
-            backLink = backLinkFor(breadcrumbs)
-          )
+            continueAction =
+              if (context.config.features.showYesNoQuestionBeforeContinue)
+                controller.continueWithYesNo
+              else controller.continueToHost,
+            backLink = Call("GET", context.config.backlinkUrl),
+            context.config.features.showYesNoQuestionBeforeContinue,
+            context.config.content.yesNoQuestionText,
+            formWithErrors.or(YesNoChoiceForm)
+          )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
         )
 
       case State.UploadSingleFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
-        implicit val content = context.config.content
+        import context._
         Ok(
           views.uploadSingleFileView(
             maxFileUploadsNumber = context.config.maximumNumberOfFiles,
@@ -389,7 +405,7 @@ class FileUploadJourneyController @Inject() (
         )
 
       case State.WaitingForFileVerification(context, reference, _, _, _) =>
-        implicit val content = context.config.content
+        import context._
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showSummary,
@@ -400,19 +416,18 @@ class FileUploadJourneyController @Inject() (
         )
 
       case State.Summary(context, fileUploads, _) =>
-        implicit val content = context.config.content
         Ok(
           if (fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
             views.summaryView(
               maxFileUploadsNumber = context.config.maximumNumberOfFiles,
               maximumFileSizeBytes = context.config.maximumFileSizeBytes,
-              formWithErrors.or(UploadAnotherFileChoiceForm),
+              formWithErrors.or(YesNoChoiceForm),
               fileUploads,
               controller.submitUploadAnotherFileChoice,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               backLinkFor(breadcrumbs)
-            )
+            )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
           else
             views.summaryNoChoiceView(
               context.config.maximumNumberOfFiles,
@@ -421,7 +436,7 @@ class FileUploadJourneyController @Inject() (
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
-            )
+            )(implicitly[Request[_]], context.messages, context.config.content)
         )
 
       case _ => NotImplemented
@@ -542,8 +557,8 @@ object FileUploadJourneyController {
 
   import FormFieldMappings._
 
-  val UploadAnotherFileChoiceForm = Form[Boolean](
-    mapping("uploadAnotherFile" -> uploadAnotherFileMapping)(identity)(Option.apply)
+  val YesNoChoiceForm = Form[Boolean](
+    mapping("choice" -> yesNoMapping)(identity)(Option.apply)
   )
 
   val UpscanUploadSuccessForm = Form[S3UploadSuccess](

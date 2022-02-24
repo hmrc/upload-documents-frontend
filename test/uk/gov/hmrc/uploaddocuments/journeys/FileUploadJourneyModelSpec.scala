@@ -52,7 +52,7 @@ class FileUploadJourneyModelSpec
 
   "FileUploadJourneyModel" when {
     "at state Initialized" should {
-      "go to UploadFile when initiateFileUpload" in {
+      "go to UploadSingleFile when initiateFileUpload" in {
         val mockUpscanInitiate: (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse] =
           (serviceId, request) =>
             Future.successful(
@@ -81,7 +81,80 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go back to FileUploaded when backToFileUploaded and non-empty file uploads" in {
+      "go to UploadSingleFile when initiateFileUpload and uploads not empty and showYesNoQuestionBeforeContinue" in {
+        val mockUpscanInitiate: (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse] =
+          (serviceId, request) =>
+            Future.successful(
+              UpscanInitiateResponse(
+                reference = "foo-bar-ref",
+                uploadRequest =
+                  UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> request.callbackUrl))
+              )
+            )
+        val upscanRequest = (nonce: String, maxFileSize: Long) =>
+          UpscanInitiateRequest(
+            "https://foo.bar/callback",
+            Some("https://foo.bar/success"),
+            Some("https://foo.bar/failure"),
+            Some(maxFileSize.toInt)
+          )
+        val context = fileUploadContext.copy(config =
+          fileUploadContext.config
+            .copy(features = Features(showYesNoQuestionBeforeContinue = true))
+        )
+        given(
+          Initialized(
+            context,
+            nonEmptyFileUploads
+          )
+        ) when initiateFileUpload(upscanRequest)(mockUpscanInitiate) should thenGo(
+          UploadSingleFile(
+            context,
+            "foo-bar-ref",
+            UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
+            FileUploads(files =
+              nonEmptyFileUploads.files ++ Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref"))
+            )
+          )
+        )
+      }
+
+      "go to Summary when initiateFileUpload and uploads not empty and not showYesNoQuestionBeforeContinue" in {
+        val mockUpscanInitiate: (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse] =
+          (serviceId, request) =>
+            Future.successful(
+              UpscanInitiateResponse(
+                reference = "foo-bar-ref",
+                uploadRequest =
+                  UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> request.callbackUrl))
+              )
+            )
+        val upscanRequest = (nonce: String, maxFileSize: Long) =>
+          UpscanInitiateRequest(
+            "https://foo.bar/callback",
+            Some("https://foo.bar/success"),
+            Some("https://foo.bar/failure"),
+            Some(maxFileSize.toInt)
+          )
+        val context = fileUploadContext.copy(config =
+          fileUploadContext.config
+            .copy(features = Features(showYesNoQuestionBeforeContinue = false))
+        )
+        given(
+          Initialized(
+            context,
+            nonEmptyFileUploads
+          )
+        ) when initiateFileUpload(upscanRequest)(mockUpscanInitiate) should thenGo(
+          Summary(
+            fileUploadContext,
+            nonEmptyFileUploads,
+            acknowledged = true
+          )
+        )
+      }
+
+      "go back to Summary when backToFileUploaded and non-empty file uploads" in {
         given(Initialized(fileUploadContext, nonEmptyFileUploads))
           .when(backToSummary)
           .thenGoes(
@@ -1296,7 +1369,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to FileUploaded when waitForFileVerification and accepted already" in {
+      "go to Summary when waitForFileVerification and accepted already" in {
         given(
           UploadSingleFile(
             fileUploadContext,
@@ -1363,7 +1436,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when waitForFileVerification and file upload already rejected" in {
+      "go to UploadSingleFile when waitForFileVerification and file upload already rejected" in {
         given(
           UploadSingleFile(
             fileUploadContext,
@@ -1444,7 +1517,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to FileUploaded when upscanCallbackArrived and accepted, and reference matches" in {
+      "go to Summary when upscanCallbackArrived and accepted, and reference matches" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
@@ -1481,7 +1554,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when upscanCallbackArrived and accepted, and reference matches but upload is a duplicate" in {
+      "go to UploadSingleFile when upscanCallbackArrived and accepted, and reference matches but upload is a duplicate" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
@@ -1571,7 +1644,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when upscanCallbackArrived and failed, and reference matches" in {
+      "go to UploadSingleFile when upscanCallbackArrived and failed, and reference matches" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
@@ -1627,7 +1700,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile with error when fileUploadWasRejected" in {
+      "go to UploadSingleFile with error when fileUploadWasRejected" in {
         val state =
           UploadSingleFile(
             fileUploadContext,
@@ -1710,7 +1783,7 @@ class FileUploadJourneyModelSpec
           )
       }
 
-      "go to UploadFile when initiateFileUpload and number of uploaded files below the limit" in {
+      "go to UploadSingleFile when initiateFileUpload and number of uploaded files below the limit" in {
         val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
@@ -1738,7 +1811,7 @@ class FileUploadJourneyModelSpec
           )
       }
 
-      "go to FileUploaded when initiateFileUpload and number of uploaded files above the limit" in {
+      "go to Summary when initiateFileUpload and number of uploaded files above the limit" in {
         val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until maxFileUploadsNumber)
@@ -1788,7 +1861,7 @@ class FileUploadJourneyModelSpec
         given(state).when(waitForFileVerification).thenNoChange
       }
 
-      "go to UploadFile when waitForFileVerification and reference unknown" in {
+      "go to UploadSingleFile when waitForFileVerification and reference unknown" in {
         given(
           WaitingForFileVerification(
             fileUploadContext,
@@ -1829,7 +1902,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to FileUploaded when waitForFileVerification and file already accepted" in {
+      "go to Summary when waitForFileVerification and file already accepted" in {
         given(
           WaitingForFileVerification(
             fileUploadContext,
@@ -1863,7 +1936,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when waitForFileVerification and file already failed" in {
+      "go to UploadSingleFile when waitForFileVerification and file already failed" in {
         given(
           WaitingForFileVerification(
             fileUploadContext,
@@ -1922,7 +1995,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to FileUploaded when upscanCallbackArrived and accepted, and reference matches" in {
+      "go to Summary when upscanCallbackArrived and accepted, and reference matches" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
@@ -1960,7 +2033,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when upscanCallbackArrived and failed, and reference matches" in {
+      "go to UploadSingleFile when upscanCallbackArrived and failed, and reference matches" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
@@ -2076,7 +2149,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "retreat to FileUploaded when some files has been uploaded already" in {
+      "retreat to Summary when some files has been uploaded already" in {
         given(
           WaitingForFileVerification(
             fileUploadContext,
@@ -2165,7 +2238,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "go to UploadFile when initiateFileUpload" in {
+      "go to UploadSingleFile when initiateFileUpload" in {
         val hostData = fileUploadContext
         val uploadRequest = UploadRequest(
           href = "https://s3.bucket",
@@ -2219,7 +2292,7 @@ class FileUploadJourneyModelSpec
           .thenGoes(state.copy(acknowledged = true))
       }
 
-      "go to UploadFile when initiateFileUpload and number of uploads below the limit" in {
+      "go to UploadSingleFile when initiateFileUpload and number of uploads below the limit" in {
         val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
@@ -2280,7 +2353,7 @@ class FileUploadJourneyModelSpec
           .thenNoChange
       }
 
-      "go to UploadFile when submitedUploadAnotherFileChoice with yes and number of uploads below the limit" in {
+      "go to UploadSingleFile when submitedUploadAnotherFileChoice with yes and number of uploads below the limit" in {
         val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
@@ -2330,7 +2403,7 @@ class FileUploadJourneyModelSpec
           )
       }
 
-      "go to UploadFile when removeFileUploadByReference leaving no files" in {
+      "go to UploadSingleFile when removeFileUploadByReference leaving no files" in {
         val hostData = fileUploadContext
         val fileUploads = FileUploads(Seq(fileUploadAccepted))
         val mockPushFileUploadResult: FileUploadResultPushApi =

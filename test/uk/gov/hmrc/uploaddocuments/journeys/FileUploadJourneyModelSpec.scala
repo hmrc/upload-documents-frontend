@@ -149,7 +149,7 @@ class FileUploadJourneyModelSpec
           Summary(
             fileUploadContext,
             nonEmptyFileUploads,
-            acknowledged = true
+            acknowledged = false
           )
         )
       }

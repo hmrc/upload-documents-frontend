@@ -160,10 +160,10 @@ export class MultiFileUpload extends Component {
 
   private handleSubmit(e: Event): void {
 
-
     this.updateFormStatusVisibility(this.isBusy());
 
-    if (this.errorManager.hasErrors()) {
+    if (this.errorManager.hasErrors()
+      && !this.errorManager.hasSingleError("initial")) {
       this.errorManager.focusSummary();
       e.preventDefault();
       return;
@@ -175,10 +175,7 @@ export class MultiFileUpload extends Component {
       return;
     }
 
-    if (this.container.querySelectorAll(`.${this.classes.uploaded}`).length >= this.config.minFiles) {
-      //window.location.href = this.config.actionUrl;
-    }
-    else {
+    if (!(this.container.querySelectorAll(`.${this.classes.uploaded}`).length >= this.config.minFiles)) {
       const firstFileInput = this.itemList.querySelector(`.${this.classes.file}`);
       this.errorManager.addError(firstFileInput.id, this.messages.noFilesUploadedError);
       this.errorManager.focusSummary();

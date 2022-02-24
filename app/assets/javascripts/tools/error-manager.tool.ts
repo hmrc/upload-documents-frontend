@@ -71,6 +71,10 @@ export default class ErrorManager {
     this.updateErrorSummaryVisibility();
   }
 
+  public hasSingleError(inputId: string): boolean {
+    return Object.entries(this.errors).length === 1 && this.hasError(inputId);
+  }
+
   public hasError(inputId: string): boolean {
     return Object.prototype.hasOwnProperty.call(this.errors, inputId);
   }

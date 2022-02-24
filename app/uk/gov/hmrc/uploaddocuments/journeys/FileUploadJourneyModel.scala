@@ -258,7 +258,7 @@ object FileUploadJourneyModel extends JourneyModel {
             upscanRequest,
             upscanInitiate,
             state.fileUploadsOpt,
-            showUploadSummaryIfAny = true
+            showUploadSummaryIfAny = !state.context.config.features.showYesNoQuestionBeforeContinue
           )
 
         case current @ UploadSingleFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>

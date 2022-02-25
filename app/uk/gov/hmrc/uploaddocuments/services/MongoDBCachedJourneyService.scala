@@ -34,7 +34,7 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
   val stateFormats: Format[model.State]
   def getJourneyId(context: RequestContext): Option[String]
   val traceFSM: Boolean = false
-  val keyProvider: KeyProvider
+  val keyProviderFromContext: RequestContext => KeyProvider
 
   private val self = this
 
@@ -56,12 +56,13 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
       self.getJourneyId(requestContext)
   }
 
-  def encrypt(state: model.State, breadcrumbs: List[model.State]): JsValue =
-    JsString(Encryption.encrypt(PersistentState(state, breadcrumbs), keyProvider))
+  def encrypt(state: model.State, breadcrumbs: List[model.State])(implicit rc: RequestContext): JsValue =
+    JsString(Encryption.encrypt(PersistentState(state, breadcrumbs), keyProviderFromContext(rc)))
 
   final override def apply(
     transition: model.Transition
-  )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] =
+  )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
+    val keyProvider = keyProviderFromContext(rc)
     cache
       .modify(Encryption.encrypt(PersistentState(model.root, Nil), keyProvider)) { encrypted =>
         val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
@@ -96,20 +97,24 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
         }
         stateAndBreadcrumbs
       }
+  }
 
   final override protected def fetch(implicit
-    requestContext: RequestContext,
+    rc: RequestContext,
     ec: ExecutionContext
-  ): Future[Option[StateAndBreadcrumbs]] =
+  ): Future[Option[StateAndBreadcrumbs]] = {
+    val keyProvider = keyProviderFromContext(rc)
     cache.fetch
       .map(_.map { encrypted =>
         val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         (entry.state, entry.breadcrumbs)
       })
+  }
 
   final override protected def save(
     stateAndBreadcrumbs: StateAndBreadcrumbs
-  )(implicit requestContext: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
+  )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
+    val keyProvider = keyProviderFromContext(rc)
     val entry = PersistentState(stateAndBreadcrumbs._1, stateAndBreadcrumbs._2)
     val encrypted = Encryption.encrypt(entry, keyProvider)
     cache
@@ -127,7 +132,7 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
       }
   }
 
-  final override def clear(implicit requestContext: RequestContext, ec: ExecutionContext): Future[Unit] =
+  final override def clear(implicit rc: RequestContext, ec: ExecutionContext): Future[Unit] =
     cache.clear()
 
 }

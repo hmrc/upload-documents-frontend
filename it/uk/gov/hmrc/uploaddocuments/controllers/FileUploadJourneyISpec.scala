@@ -26,7 +26,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
   import journey.model.State._
 
-  implicit val journeyId: JourneyId = JourneyId()
+  implicit val journeyId: JourneyId = JourneyId("sadasdjkasdhuqyhwa326176318346674e764764")
 
   val hostUserAgent: String = HostService.Any.userAgent
 
@@ -2331,7 +2331,10 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = app.injector.instanceOf[CacheRepository]
-    override lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
+    lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
+
+    override lazy val keyProviderFromContext: JourneyId => KeyProvider =
+      hc => KeyProvider(keyProvider, None)
 
     override val stateFormats: Format[model.State] =
       FileUploadJourneyStateFormats.formats

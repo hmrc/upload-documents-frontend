@@ -28,37 +28,6 @@ import scala.util.Try
 import scala.collection.JavaConverters._
 import javax.crypto.spec.SecretKeySpec
 
-trait KeyProvider {
-  def keys: Seq[Key]
-}
-
-object KeyProvider {
-
-  def apply(base64Key: String): KeyProvider = KeyProvider(Seq(base64Key))
-
-  def apply(base64Keys: Seq[String]): KeyProvider = {
-    val secretKeys: Seq[Key] = base64Keys
-      .map { encryptionKey =>
-        new SecretKeySpec(Base64.decodeBase64(encryptionKey.getBytes(StandardCharsets.UTF_8)), "AES")
-      }
-    new KeyProvider {
-      override val keys: Seq[Key] = secretKeys
-    }
-  }
-
-  def apply(config: Config): KeyProvider = {
-    val currentEncryptionKey: String = Try(config.getString("json.encryption.key"))
-      .getOrElse(throw new SecurityException(s"Missing required configuration entry: json.encryption.key"))
-
-    val previousEncryptionKeys: Seq[String] =
-      Try(config.getStringList("json.encryption.previousKeys"))
-        .map(_.asScala)
-        .getOrElse(Seq.empty)
-
-    KeyProvider(currentEncryptionKey +: previousEncryptionKeys)
-  }
-}
-
 object Encryption {
 
   final def encrypt[T](value: T, keyProvider: KeyProvider)(implicit wrts: Writes[T]): String = {
@@ -92,7 +61,7 @@ object Encryption {
 
           case (right, _) => right
         }
-        .getOrElse(throw new SecurityException("Failed decrypting data"))
+        .getOrElse(throw new SecurityException(s"Failed decrypting data"))
 
     rds.reads(Json.parse(plainText)) match {
       case JsSuccess(value, path) => value
@@ -108,4 +77,57 @@ object Encryption {
     }
   }
 
+}
+
+trait KeyProvider {
+  def keys: Seq[Key]
+}
+
+object KeyProvider {
+
+  def apply(base64Key: String): KeyProvider = KeyProvider(Seq(base64Key))
+
+  def apply(base64Keys: Seq[String]): KeyProvider = {
+    val secretKeys: Seq[Key] = base64Keys
+      .map { encryptionKey =>
+        new SecretKeySpec(Base64.decodeBase64(encryptionKey.getBytes(StandardCharsets.UTF_8)), "AES")
+      }
+    new KeyProvider {
+      override val keys: Seq[Key] = secretKeys
+    }
+  }
+
+  def apply(config: Config): KeyProvider = {
+    val currentEncryptionKey: String = Try(config.getString("json.encryption.key"))
+      .getOrElse(throw new SecurityException(s"Missing required configuration entry: json.encryption.key"))
+
+    val previousEncryptionKeys: Seq[String] =
+      Try(config.getStringList("json.encryption.previousKeys"))
+        .map(_.asScala)
+        .getOrElse(Seq.empty)
+
+    KeyProvider(currentEncryptionKey +: previousEncryptionKeys)
+  }
+
+  val padding: Array[Byte] = Array.fill[Byte](32)(-1.toByte)
+
+  def apply(keyProvider: KeyProvider, context: Option[String]): KeyProvider = new KeyProvider {
+    val secretKeys = context
+      .map { s =>
+        val key: Array[Byte] = (s.getBytes(StandardCharsets.UTF_8) ++ padding).take(32)
+        keyProvider.keys.map { k =>
+          new SecretKeySpec(xor(k.getEncoded(), key), "AES")
+        }
+      }
+      .getOrElse(keyProvider.keys)
+
+    override val keys: Seq[Key] = secretKeys
+  }
+
+  private def xor(a: Array[Byte], b: Array[Byte]): Array[Byte] = {
+    val c: Array[Byte] = Array.ofDim[Byte](32)
+    for (i <- 0 until 32)
+      c.update(i, a(i).^(b(i)).toByte)
+    c
+  }
 }

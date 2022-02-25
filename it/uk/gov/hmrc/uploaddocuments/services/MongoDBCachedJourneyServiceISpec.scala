@@ -496,7 +496,7 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
   val stateFormats: Format[Int] =
     SimpleDecimalFormat(_.toInt, BigDecimal.apply(_))
 
-  def encrypt(i: Int, is: List[Int]): JsValue = service.encrypt(i, is)
+  def encrypt(i: Int, is: List[Int])(implicit rc: String): JsValue = service.encrypt(i, is)
 
   // define test service capable of manipulating journey state
   lazy val service = new PersistentJourneyService[String] with MongoDBCachedJourneyService[String] {
@@ -506,7 +506,8 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = MongoDBCachedJourneyServiceISpecSetup.this.cacheRepository
-    override lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
+    lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
+    override lazy val keyProviderFromContext: String => KeyProvider = _ => keyProvider
     override val stateFormats: Format[model.State] = MongoDBCachedJourneyServiceISpecSetup.this.stateFormats
 
     override def getJourneyId(journeyId: String): Option[String] = Option(journeyId)

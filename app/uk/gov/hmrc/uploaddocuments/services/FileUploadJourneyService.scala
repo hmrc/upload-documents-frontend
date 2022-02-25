@@ -62,13 +62,16 @@ case class MongoDBCachedFileUploadJourneyService @Inject() (
   actorSystem: ActorSystem
 ) extends MongoDBCachedJourneyService[HeaderCarrier] with FileUploadJourneyServiceWithHeaderCarrier {
 
-  override val stateFormats: Format[model.State] =
+  override final val stateFormats: Format[model.State] =
     FileUploadJourneyStateFormats.formats
 
   override def getJourneyId(hc: HeaderCarrier): Option[String] =
     hc.extraHeaders.find(_._1 == journeyKey).map(_._2)
 
-  override val keyProvider: KeyProvider = KeyProvider(config)
+  final val baseKeyProvider: KeyProvider = KeyProvider(config)
+
+  override final val keyProviderFromContext: HeaderCarrier => KeyProvider =
+    hc => KeyProvider(baseKeyProvider, None)
 
   override val traceFSM: Boolean = appConfig.traceFSM
 }

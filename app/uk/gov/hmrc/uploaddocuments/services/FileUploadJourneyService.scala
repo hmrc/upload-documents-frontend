@@ -25,6 +25,8 @@ import uk.gov.hmrc.play.fsm.PersistentJourneyService
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import akka.actor.ActorSystem
+import com.fasterxml.jackson.module.scala.deser.overrides
+import java.security.Key
 
 trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
 
@@ -66,6 +68,10 @@ case class MongoDBCachedFileUploadJourneyService @Inject() (
 
   override def getJourneyId(hc: HeaderCarrier): Option[String] =
     hc.extraHeaders.find(_._1 == journeyKey).map(_._2)
+
+  override val keyProvider: KeyProvider = new KeyProvider {
+    override def key: Key = ???
+  }
 
   override val traceFSM: Boolean = appConfig.traceFSM
 }

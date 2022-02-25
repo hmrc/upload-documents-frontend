@@ -16,19 +16,14 @@
 
 package uk.gov.hmrc.uploaddocuments.services
 
-import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.crypto.json.{JsonDecryptor, JsonEncryptor}
-import uk.gov.hmrc.crypto.{ApplicationCrypto, CompositeSymmetricCrypto, Protected}
-import uk.gov.hmrc.play.fsm.PersistentJourneyService
-
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import akka.actor.ActorSystem
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Format, JsString, JsValue, Json}
+import uk.gov.hmrc.play.fsm.{PersistentJourneyService, PlayFsmUtils}
+import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.io.AnsiColor
-import uk.gov.hmrc.play.fsm.PlayFsmUtils
 
 /** Journey persistence service mixin, stores encrypted serialized state using [[JourneyCache]].
   */
@@ -36,45 +31,40 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
 
   val actorSystem: ActorSystem
   val cacheRepository: CacheRepository
-  val applicationCrypto: ApplicationCrypto
   val stateFormats: Format[model.State]
   def getJourneyId(context: RequestContext): Option[String]
   val traceFSM: Boolean = false
+  val keyProvider: KeyProvider
 
   private val self = this
 
   case class PersistentState(state: model.State, breadcrumbs: List[model.State])
 
-  implicit lazy val crypto: CompositeSymmetricCrypto = applicationCrypto.JsonCrypto
-
   implicit lazy val formats1: Format[model.State] = stateFormats
   implicit lazy val formats2: Format[PersistentState] = Json.format[PersistentState]
 
-  implicit lazy val encryptionFormat: JsonEncryptor[PersistentState] = new JsonEncryptor()
-  implicit lazy val decryptionFormat: JsonDecryptor[PersistentState] = new JsonDecryptor()
-
   private val logger = Logger.apply(this.getClass)
 
-  final val cache = new JourneyCache[Protected[PersistentState], RequestContext] {
+  final val cache = new JourneyCache[String, RequestContext] {
 
     override lazy val actorSystem: ActorSystem = self.actorSystem
     override lazy val journeyKey: String = self.journeyKey
     override lazy val cacheRepository: CacheRepository = self.cacheRepository
-    override lazy val format: Format[Protected[PersistentState]] = implicitly[Format[Protected[PersistentState]]]
+    override lazy val format: Format[String] = implicitly[Format[String]]
 
     override def getJourneyId(implicit requestContext: RequestContext): Option[String] =
       self.getJourneyId(requestContext)
   }
 
   def encrypt(state: model.State, breadcrumbs: List[model.State]): JsValue =
-    encryptionFormat.writes(Protected(PersistentState(state, breadcrumbs)))
+    JsString(Encryption.encrypt(PersistentState(state, breadcrumbs), keyProvider))
 
   final override def apply(
     transition: model.Transition
   )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] =
     cache
-      .modify(Protected(PersistentState(model.root, Nil))) { protectedEntry =>
-        val entry = protectedEntry.decryptedValue
+      .modify(Encryption.encrypt(PersistentState(model.root, Nil), keyProvider)) { encrypted =>
+        val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         val (state, breadcrumbs) = (entry.state, entry.breadcrumbs)
         transition.apply
           .applyOrElse(
@@ -82,16 +72,17 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
             (_: model.State) => model.fail(model.TransitionNotAllowed(state, breadcrumbs, transition))
           )
           .map { endState =>
-            Protected(
+            Encryption.encrypt(
               PersistentState(
                 endState,
                 updateBreadcrumbs(endState, state, breadcrumbs)
-              )
+              ),
+              keyProvider
             )
           }
       }
-      .map { protectedEntry =>
-        val entry = protectedEntry.decryptedValue
+      .map { encrypted =>
+        val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         val stateAndBreadcrumbs = (entry.state, entry.breadcrumbs)
         if (traceFSM) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)
@@ -111,8 +102,8 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
     ec: ExecutionContext
   ): Future[Option[StateAndBreadcrumbs]] =
     cache.fetch
-      .map(_.map { protectedEntry =>
-        val entry = protectedEntry.decryptedValue
+      .map(_.map { encrypted =>
+        val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         (entry.state, entry.breadcrumbs)
       })
 
@@ -120,9 +111,9 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
     stateAndBreadcrumbs: StateAndBreadcrumbs
   )(implicit requestContext: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
     val entry = PersistentState(stateAndBreadcrumbs._1, stateAndBreadcrumbs._2)
-    val protectedEntry = Protected(entry)
+    val encrypted = Encryption.encrypt(entry, keyProvider)
     cache
-      .save(protectedEntry)
+      .save(encrypted)
       .map { _ =>
         if (traceFSM) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)

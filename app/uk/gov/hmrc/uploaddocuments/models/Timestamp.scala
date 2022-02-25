@@ -27,6 +27,8 @@ sealed trait Timestamp {
 
   def isAfter(other: Timestamp, minGapMillis: Long): Boolean
 
+  def duration: Long = System.currentTimeMillis() - value
+
   final override def hashCode(): Int =
     value.toInt
 

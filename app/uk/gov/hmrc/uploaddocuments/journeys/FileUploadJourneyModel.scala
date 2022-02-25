@@ -22,6 +22,7 @@ import uk.gov.hmrc.uploaddocuments.models._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import uk.gov.hmrc.uploaddocuments.support.UploadLog
 
 object FileUploadJourneyModel extends JourneyModel {
 
@@ -311,6 +312,7 @@ object FileUploadJourneyModel extends JourneyModel {
               fileUploads,
               maybeUploadError
             ) =>
+          UploadLog.failure(context, error)
           val now = Timestamp.now
           val updatedFileUploads = fileUploads.copy(files = fileUploads.files.map {
             case fu @ FileUpload.Initiated(nonce, _, ref, _, _)
@@ -321,6 +323,7 @@ object FileUploadJourneyModel extends JourneyModel {
           goto(current.copy(fileUploads = updatedFileUploads, maybeUploadError = Some(FileTransmissionFailed(error))))
 
         case current @ UploadMultipleFiles(context, fileUploads) =>
+          UploadLog.failure(context, error)
           val updatedFileUploads = fileUploads.copy(files = fileUploads.files.map {
             case FileUpload(nonce, ref, _) if ref == error.key =>
               FileUpload.Rejected(nonce, Timestamp.now, ref, error)
@@ -476,7 +479,7 @@ object FileUploadJourneyModel extends JourneyModel {
       def updateFileUploads(
         fileUploads: FileUploads,
         allowStatusOverwrite: Boolean,
-        config: FileUploadSessionConfig
+        context: FileUploadContext
       ): (FileUploads, Boolean) = {
         val modifiedFileUploads = fileUploads.copy(files = fileUploads.files.map {
           // update status of the file with matching nonce
@@ -503,6 +506,7 @@ object FileUploadJourneyModel extends JourneyModel {
                       duplicateFileName = uploadDetails.fileName
                     )
                   case _ =>
+                    UploadLog.success(context, uploadDetails, fileUpload.timestamp)
                     FileUpload.Accepted(
                       nonce,
                       Timestamp.now,
@@ -513,12 +517,13 @@ object FileUploadJourneyModel extends JourneyModel {
                       FileUpload.sanitizeFileName(uploadDetails.fileName),
                       uploadDetails.fileMimeType,
                       uploadDetails.size,
-                      description = config.newFileDescription
+                      description = context.config.newFileDescription
                     )
                 }
                 modifiedFileUpload
 
               case UpscanFileFailed(_, failureDetails) =>
+                UploadLog.failure(context, failureDetails, fileUpload.timestamp)
                 FileUpload.Failed(
                   nonce,
                   Timestamp.now,
@@ -540,7 +545,7 @@ object FileUploadJourneyModel extends JourneyModel {
               fileUploads
             ) =>
           val (updatedFileUploads, newlyAccepted) =
-            updateFileUploads(fileUploads, allowStatusOverwrite = false, config = context.config)
+            updateFileUploads(fileUploads, allowStatusOverwrite = false, context = context)
           (if (newlyAccepted)
              pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
@@ -560,7 +565,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
         case current @ UploadSingleFile(context, reference, uploadRequest, fileUploads, errorOpt) =>
           val (updatedFileUploads, newlyAccepted) =
-            updateFileUploads(fileUploads, allowStatusOverwrite = false, config = context.config)
+            updateFileUploads(fileUploads, allowStatusOverwrite = false, context = context)
           (if (newlyAccepted)
              pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
@@ -580,7 +585,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
         case current @ UploadMultipleFiles(context, fileUploads) =>
           val (updatedFileUploads, newlyAccepted) =
-            updateFileUploads(fileUploads, allowStatusOverwrite = true, config = context.config)
+            updateFileUploads(fileUploads, allowStatusOverwrite = true, context = context)
           (if (newlyAccepted)
              pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
@@ -591,7 +596,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
         case current @ ContinueToHost(context, fileUploads) =>
           val (updatedFileUploads, newlyAccepted) =
-            updateFileUploads(fileUploads, allowStatusOverwrite = true, config = context.config)
+            updateFileUploads(fileUploads, allowStatusOverwrite = true, context = context)
           (if (newlyAccepted)
              pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))

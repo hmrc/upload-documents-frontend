@@ -1,28 +1,20 @@
 package uk.gov.hmrc.uploaddocuments.services
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import akka.actor.ActorSystem
+import com.typesafe.config.Config
+import org.mongodb.scala.{MongoClient, MongoDatabase}
+import play.api.libs.json.{Format, JsError, JsNumber, JsString, JsSuccess, JsValue, Json, Reads, Writes}
+import uk.gov.hmrc.mongo.cache.{CacheItem, DataKey}
+import uk.gov.hmrc.mongo.{CurrentTimestampSupport, MongoComponent}
+import uk.gov.hmrc.play.fsm.{JourneyModel, PersistentJourneyService}
+import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.support.AppISpec
-import uk.gov.hmrc.play.fsm.JourneyModel
+
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.crypto.ApplicationCrypto
-import uk.gov.hmrc.play.fsm.PersistentJourneyService
-import scala.concurrent.Future
-import play.api.libs.json.{Format, JsError, JsNumber, JsSuccess, Reads, Writes}
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.mongo.MongoComponent
 import scala.concurrent.duration.Duration
-import org.mongodb.scala.MongoClient
-import org.mongodb.scala.MongoDatabase
-import uk.gov.hmrc.mongo.CurrentTimestampSupport
-import uk.gov.hmrc.mongo.cache.CacheItem
-import uk.gov.hmrc.mongo.cache.DataKey
-import java.time.Instant
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsString
+import scala.concurrent.{ExecutionContext, Future}
 
 class MongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
 
@@ -514,7 +506,7 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = MongoDBCachedJourneyServiceISpecSetup.this.cacheRepository
-    override lazy val applicationCrypto = app.injector.instanceOf[ApplicationCrypto]
+    override lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
     override val stateFormats: Format[model.State] = MongoDBCachedJourneyServiceISpecSetup.this.stateFormats
 
     override def getJourneyId(journeyId: String): Option[String] = Option(journeyId)

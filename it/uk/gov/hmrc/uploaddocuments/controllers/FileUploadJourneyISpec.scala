@@ -1,18 +1,19 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{Format, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, StandaloneWSRequest}
 import play.api.mvc.{AnyContent, Call, Cookie, Request, Session}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.crypto.{ApplicationCrypto, PlainText}
+import uk.gov.hmrc.crypto.PlainText
 import uk.gov.hmrc.http.SessionKeys
 import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyStateFormats
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
-import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, MongoDBCachedJourneyService}
+import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, KeyProvider, MongoDBCachedJourneyService}
 import uk.gov.hmrc.uploaddocuments.stubs.{ExternalApiStubs, UpscanInitiateStubs}
 import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestJourneyService}
 
@@ -2330,7 +2331,7 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = app.injector.instanceOf[CacheRepository]
-    override lazy val applicationCrypto = app.injector.instanceOf[ApplicationCrypto]
+    override lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
 
     override val stateFormats: Format[model.State] =
       FileUploadJourneyStateFormats.formats

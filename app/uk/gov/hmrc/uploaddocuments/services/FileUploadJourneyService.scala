@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.uploaddocuments.services
 
-import javax.inject.{Inject, Singleton}
+import akka.actor.ActorSystem
+import com.typesafe.config.Config
 import play.api.libs.json.Format
-import uk.gov.hmrc.crypto.ApplicationCrypto
-import uk.gov.hmrc.uploaddocuments.journeys.{FileUploadJourneyModel, FileUploadJourneyStateFormats}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.fsm.PersistentJourneyService
-import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
+import uk.gov.hmrc.uploaddocuments.journeys.{FileUploadJourneyModel, FileUploadJourneyStateFormats}
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
-import akka.actor.ActorSystem
-import com.fasterxml.jackson.module.scala.deser.overrides
-import java.security.Key
+import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
+
+import javax.inject.{Inject, Singleton}
 
 trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
 
@@ -58,7 +57,7 @@ trait FileUploadJourneyServiceWithHeaderCarrier extends FileUploadJourneyService
 @Singleton
 case class MongoDBCachedFileUploadJourneyService @Inject() (
   cacheRepository: CacheRepository,
-  applicationCrypto: ApplicationCrypto,
+  config: Config,
   appConfig: AppConfig,
   actorSystem: ActorSystem
 ) extends MongoDBCachedJourneyService[HeaderCarrier] with FileUploadJourneyServiceWithHeaderCarrier {
@@ -69,9 +68,7 @@ case class MongoDBCachedFileUploadJourneyService @Inject() (
   override def getJourneyId(hc: HeaderCarrier): Option[String] =
     hc.extraHeaders.find(_._1 == journeyKey).map(_._2)
 
-  override val keyProvider: KeyProvider = new KeyProvider {
-    override def key: Key = ???
-  }
+  override val keyProvider: KeyProvider = KeyProvider(config)
 
   override val traceFSM: Boolean = appConfig.traceFSM
 }

@@ -23,19 +23,78 @@ import play.api.libs.json.{JsError, JsSuccess, Json, Reads, Writes}
 import java.nio.charset.StandardCharsets
 import java.security.Key
 import javax.crypto.Cipher
+import com.typesafe.config.Config
+import scala.util.Try
+import scala.collection.JavaConverters._
+import javax.crypto.spec.SecretKeySpec
 
 trait KeyProvider {
-  def key: Key
+  def keys: Seq[Key]
+}
+
+object KeyProvider {
+
+  def apply(base64Key: String): KeyProvider = KeyProvider(Seq(base64Key))
+
+  def apply(base64Keys: Seq[String]): KeyProvider = {
+    val secretKeys: Seq[Key] = base64Keys
+      .map { encryptionKey =>
+        new SecretKeySpec(Base64.decodeBase64(encryptionKey.getBytes(StandardCharsets.UTF_8)), "AES")
+      }
+    new KeyProvider {
+      override val keys: Seq[Key] = secretKeys
+    }
+  }
+
+  def apply(config: Config): KeyProvider = {
+    val currentEncryptionKey: String = Try(config.getString("json.encryption.key"))
+      .getOrElse(throw new SecurityException(s"Missing required configuration entry: json.encryption.key"))
+
+    val previousEncryptionKeys: Seq[String] =
+      Try(config.getStringList("json.encryption.previousKeys"))
+        .map(_.asScala)
+        .getOrElse(Seq.empty)
+
+    KeyProvider(currentEncryptionKey +: previousEncryptionKeys)
+  }
 }
 
 object Encryption {
 
-  def encrypt[T](value: T, keyProvider: KeyProvider)(implicit wrts: Writes[T]): String =
-    encrypt(Json.stringify(wrts.writes(value)), keyProvider.key)
+  final def encrypt[T](value: T, keyProvider: KeyProvider)(implicit wrts: Writes[T]): String = {
+    val plainText = Json.stringify(wrts.writes(value))
+    try {
+      val key: Key = keyProvider.keys.headOption.getOrElse(throw new Exception("Missing excryption key"))
+      val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
+      cipher.init(Cipher.ENCRYPT_MODE, key, cipher.getParameters)
+      new String(
+        Base64.encodeBase64(cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8))),
+        StandardCharsets.UTF_8
+      )
+    } catch {
+      case e: Exception => throw new SecurityException("Failed encrypting data", e)
+    }
+  }
 
-  def decrypt[T](encrypted: String, keyProvider: KeyProvider)(implicit rds: Reads[T]): T =
-    rds
-      .reads(Json.parse(decrypt(encrypted, keyProvider.key))) match {
+  final def decrypt[T](encrypted: String, keyProvider: KeyProvider)(implicit rds: Reads[T]): T = {
+    val plainText: String =
+      keyProvider.keys
+        .foldLeft[Either[Unit, String]](Left(())) {
+          case (Left(()), key) =>
+            Try {
+              val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
+              cipher.init(Cipher.DECRYPT_MODE, key, cipher.getParameters)
+              new String(
+                cipher.doFinal(Base64.decodeBase64(encrypted.getBytes(StandardCharsets.UTF_8))),
+                StandardCharsets.UTF_8
+              )
+            }.toEither.left.map(_ => ())
+
+          case (right, _) => right
+        }
+        .getOrElse(throw new SecurityException("Failed decrypting data"))
+
+    rds.reads(Json.parse(plainText)) match {
       case JsSuccess(value, path) => value
       case JsError(jsonErrors) =>
         val error =
@@ -47,23 +106,6 @@ object Encryption {
         Logger(getClass).error(error)
         throw new Exception(error)
     }
-
-  def encrypt(data: String, key: Key): String =
-    try {
-      val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
-      cipher.init(Cipher.ENCRYPT_MODE, key, cipher.getParameters)
-      new String(Base64.encodeBase64(cipher.doFinal(data.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8)
-    } catch {
-      case e: Exception => throw new SecurityException("Failed encrypting data", e)
-    }
-
-  def decrypt(data: String, key: Key): String =
-    try {
-      val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
-      cipher.init(Cipher.DECRYPT_MODE, key, cipher.getParameters)
-      new String(cipher.doFinal(Base64.decodeBase64(data.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8)
-    } catch {
-      case e: Exception => throw new SecurityException("Failed decrypting data", e)
-    }
+  }
 
 }

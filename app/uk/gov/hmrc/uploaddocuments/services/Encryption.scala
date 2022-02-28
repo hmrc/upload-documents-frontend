@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.uploaddocuments.services
 
+import com.typesafe.config.Config
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, Json, Reads, Writes}
@@ -23,10 +24,9 @@ import play.api.libs.json.{JsError, JsSuccess, Json, Reads, Writes}
 import java.nio.charset.StandardCharsets
 import java.security.Key
 import javax.crypto.Cipher
-import com.typesafe.config.Config
-import scala.util.Try
-import scala.collection.JavaConverters._
 import javax.crypto.spec.SecretKeySpec
+import scala.collection.JavaConverters._
+import scala.util.Try
 
 object Encryption {
 
@@ -45,37 +45,35 @@ object Encryption {
     }
   }
 
-  final def decrypt[T](encrypted: String, keyProvider: KeyProvider)(implicit rds: Reads[T]): T = {
-    val plainText: String =
-      keyProvider.keys
-        .foldLeft[Either[Unit, String]](Left(())) {
-          case (Left(()), key) =>
-            Try {
-              val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
-              cipher.init(Cipher.DECRYPT_MODE, key, cipher.getParameters)
-              new String(
-                cipher.doFinal(Base64.decodeBase64(encrypted.getBytes(StandardCharsets.UTF_8))),
-                StandardCharsets.UTF_8
-              )
-            }.toEither.left.map(_ => ())
-
-          case (right, _) => right
-        }
-        .getOrElse(throw new SecurityException(s"Failed decrypting data"))
-
-    rds.reads(Json.parse(plainText)) match {
-      case JsSuccess(value, path) => value
-      case JsError(jsonErrors) =>
-        val error =
-          s"Encountered an issue with de-serialising JSON state: ${jsonErrors
-            .map { case (p, s) =>
-              s"${if (p.toString().isEmpty()) "" else s"$p -> "}${s.map(_.message).mkString(", ")}"
+  final def decrypt[T](encrypted: String, keyProvider: KeyProvider)(implicit rds: Reads[T]): T =
+    keyProvider.keys
+      .foldLeft[Either[Unit, T]](Left(())) {
+        case (Left(()), key) =>
+          Try {
+            val cipher: Cipher = Cipher.getInstance(key.getAlgorithm)
+            cipher.init(Cipher.DECRYPT_MODE, key, cipher.getParameters)
+            val plainText = new String(
+              cipher.doFinal(Base64.decodeBase64(encrypted.getBytes(StandardCharsets.UTF_8))),
+              StandardCharsets.UTF_8
+            )
+            val json = Json.parse(plainText)
+            rds.reads(json) match {
+              case JsSuccess(value, path) => value
+              case JsError(jsonErrors) =>
+                val error =
+                  s"Encountered an issue with de-serialising JSON state: ${jsonErrors
+                    .map { case (p, s) =>
+                      s"${if (p.toString().isEmpty()) "" else s"$p -> "}${s.map(_.message).mkString(", ")}"
+                    }
+                    .mkString(", ")}. \nCheck if all your states have relevant entries declared in the *JourneyStateFormats.serializeStateProperties and *JourneyStateFormats.deserializeState functions."
+                Logger(getClass).error(error)
+                throw new Exception(error)
             }
-            .mkString(", ")}. \nCheck if all your states have relevant entries declared in the *JourneyStateFormats.serializeStateProperties and *JourneyStateFormats.deserializeState functions."
-        Logger(getClass).error(error)
-        throw new Exception(error)
-    }
-  }
+          }.toEither.left.map(_ => ())
+
+        case (right, _) => right
+      }
+      .getOrElse(throw new SecurityException(s"Failed decrypting data"))
 
 }
 

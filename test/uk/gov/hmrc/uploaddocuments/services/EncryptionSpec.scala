@@ -16,21 +16,26 @@
 
 package uk.gov.hmrc.uploaddocuments.services
 
+import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Base64
+import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.uploaddocuments.support.UnitSpec
 
 import java.nio.charset.StandardCharsets
 import scala.util.Random
-import org.scalacheck.Gen
 
 class EncryptionSpec extends UnitSpec with ScalaCheckPropertyChecks {
+
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
+    PropertyCheckConfiguration(minSuccessful = 1000)
 
   def testKey: String = {
     val bytes: Array[Byte] = Array.ofDim[Byte](32)
     Random.nextBytes(bytes)
-    new String(Base64.encodeBase64(bytes), StandardCharsets.UTF_8)
+    val base64Key = new String(Base64.encodeBase64(bytes), StandardCharsets.UTF_8)
+    base64Key
   }
 
   case class Wrapper(data1: String, data2: Int)
@@ -107,6 +112,29 @@ class EncryptionSpec extends UnitSpec with ScalaCheckPropertyChecks {
         val d4 = Encryption.decrypt[String](e1, keyProvider4)
         d4 shouldBe data
       }
+    }
+
+    "read the AES key from base64 representation" in {
+      KeyProvider("+enIUge8OJhNe6JB50+rMJZb/3kTYJRyve3Ydj+9WPo=").keys.head.getAlgorithm() shouldBe "AES"
+    }
+
+    "read the keys from the config" in {
+      val config = ConfigFactory.parseString("""
+        | json.encryption.key = "kaTHT1YluhyGrp+5jlCGbONQoKOt6Y1o6FJ3pirxl7o="
+        | json.encryption.previousKeys = [
+        |   "Hu4nhJYqdm6rZZjtXos+rWNYnLZ7aZ25NcymJn/ZYTU=",
+        |   "5eIgUpCeGOJ9IAlAj3EsQEV3g/H+rLaSOAZCh2aseL4=",
+        |   "GsUnHUv/aXmZ8VX3+OJ00BgD7fanG9IoG8cSccmMXFY="
+        | ]
+      """.stripMargin)
+      KeyProvider(config).keys shouldBe KeyProvider(
+        Seq(
+          "kaTHT1YluhyGrp+5jlCGbONQoKOt6Y1o6FJ3pirxl7o=",
+          "Hu4nhJYqdm6rZZjtXos+rWNYnLZ7aZ25NcymJn/ZYTU=",
+          "5eIgUpCeGOJ9IAlAj3EsQEV3g/H+rLaSOAZCh2aseL4=",
+          "GsUnHUv/aXmZ8VX3+OJ00BgD7fanG9IoG8cSccmMXFY="
+        )
+      ).keys
     }
   }
 }

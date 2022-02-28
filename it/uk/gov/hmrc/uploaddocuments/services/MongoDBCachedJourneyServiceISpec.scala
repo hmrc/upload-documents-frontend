@@ -1,28 +1,20 @@
 package uk.gov.hmrc.uploaddocuments.services
 
-import play.api.libs.json.Format
-import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import akka.actor.ActorSystem
+import com.typesafe.config.Config
+import org.mongodb.scala.{MongoClient, MongoDatabase}
+import play.api.libs.json.{Format, JsError, JsNumber, JsString, JsSuccess, JsValue, Json, Reads, Writes}
+import uk.gov.hmrc.mongo.cache.{CacheItem, DataKey}
+import uk.gov.hmrc.mongo.{CurrentTimestampSupport, MongoComponent}
+import uk.gov.hmrc.play.fsm.{JourneyModel, PersistentJourneyService}
+import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.support.AppISpec
-import uk.gov.hmrc.play.fsm.JourneyModel
+
+import java.time.Instant
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.crypto.ApplicationCrypto
-import uk.gov.hmrc.play.fsm.PersistentJourneyService
-import scala.concurrent.Future
-import play.api.libs.json.{Format, JsError, JsNumber, JsSuccess, Reads, Writes}
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.mongo.MongoComponent
 import scala.concurrent.duration.Duration
-import org.mongodb.scala.MongoClient
-import org.mongodb.scala.MongoDatabase
-import uk.gov.hmrc.mongo.CurrentTimestampSupport
-import uk.gov.hmrc.mongo.cache.CacheItem
-import uk.gov.hmrc.mongo.cache.DataKey
-import java.time.Instant
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsString
+import scala.concurrent.{ExecutionContext, Future}
 
 class MongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
 
@@ -293,100 +285,6 @@ class ForgetfulMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServ
 
 }
 
-/** Tests scenario when cache repository findById returns an object with invalid journeyId's content. */
-class DistortingMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
-
-  override lazy val cacheRepository: CacheRepository =
-    new CacheRepository(
-      dummyMongoComponent,
-      "foo",
-      Duration("1 minute"),
-      new CurrentTimestampSupport
-    ) {
-      override def ensureIndexes: Future[Seq[String]] = Future.successful(Seq.empty)
-      override def ensureSchema: Future[Unit] = Future.successful(())
-      override def findById(cacheId: String): Future[Option[CacheItem]] =
-        Future.successful(
-          Some(CacheItem("foo", Json.obj("TestJourney" -> Json.obj("foo" -> "bar")), Instant.now(), Instant.now()))
-        )
-      override def get[A: Reads](cacheId: String)(dataKey: DataKey[A]): Future[Option[A]] = Future.successful(None)
-      override def put[A: Writes](cacheId: String)(dataKey: DataKey[A], data: A): Future[CacheItem] =
-        Future.successful(
-          CacheItem("foo", Json.obj("TestJourney" -> Json.obj("foo" -> "bar")), Instant.now(), Instant.now())
-        )
-      override def deleteEntity(cacheId: String): Future[Unit] = Future.successful(())
-      override def delete[A](cacheId: String)(dataKey: DataKey[A]): Future[Unit] = Future.successful(())
-    }
-
-  implicit val context: String = UUID.randomUUID().toString()
-
-  "distorting MongoDBCachedJourneyService" should {
-
-    "throw an exception at an attempt to store and fetch a state" in {
-      an[Exception] shouldBe thrownBy {
-        await(service.setState(1))
-        await(service.getState)
-      }
-    }
-
-    "throw an exception at an attempt to modify a state using a root state as a default" in {
-      an[Exception] shouldBe thrownBy {
-        await(service.apply(_ + 10))
-      }
-    }
-
-    "clear the cache" in {
-      await(service.clear) shouldBe (())
-    }
-
-    "throw an exception at an attempt to modify current state sequentially" in {
-      an[Exception] shouldBe thrownBy {
-        await(
-          Future.sequence(
-            Seq(
-              service.apply(_ + 1),
-              service.apply(_ + 2),
-              service.apply(_ + 3),
-              service.apply(_ + 4),
-              service.apply(_ + 5),
-              service.apply(_ * 10),
-              service.apply(_ * 0)
-            )
-          )
-        )
-      }
-    }
-
-    "throw an exception at an attempt to set, get, modify, clear state sequentially" in {
-      an[Exception] shouldBe thrownBy {
-        await(
-          Future.sequence(
-            Seq(
-              service.getState.map(_.get),
-              service.setState(1),
-              service.getState.map(_.get),
-              service.setState(2),
-              service.getState.map(_.get),
-              service.setState(3),
-              service.getState.map(_.get),
-              service.setState(4),
-              service.getState.map(_.get),
-              service.setState(5),
-              service.getState.map(_.get),
-              service.setState(6),
-              service.apply(_ * 2),
-              service.getState.map(_.get),
-              service.setState(7),
-              service.clear
-            )
-          )
-        )
-      }
-    }
-  }
-
-}
-
 /** Tests scenario when cache repository findById returns an object with invalid entity format. */
 class InvalidMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
 
@@ -598,7 +496,7 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
   val stateFormats: Format[Int] =
     SimpleDecimalFormat(_.toInt, BigDecimal.apply(_))
 
-  def encrypt(i: Int, is: List[Int]): JsValue = service.encrypt(i, is)
+  def encrypt(i: Int, is: List[Int])(implicit rc: String): JsValue = service.encrypt(i, is)
 
   // define test service capable of manipulating journey state
   lazy val service = new PersistentJourneyService[String] with MongoDBCachedJourneyService[String] {
@@ -608,7 +506,8 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = MongoDBCachedJourneyServiceISpecSetup.this.cacheRepository
-    override lazy val applicationCrypto = app.injector.instanceOf[ApplicationCrypto]
+    lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
+    override lazy val keyProviderFromContext: String => KeyProvider = _ => keyProvider
     override val stateFormats: Format[model.State] = MongoDBCachedJourneyServiceISpecSetup.this.stateFormats
 
     override def getJourneyId(journeyId: String): Option[String] = Option(journeyId)

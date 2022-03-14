@@ -26,7 +26,7 @@ import play.api.{Configuration, Environment}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.uploaddocuments.connectors._
 import uk.gov.hmrc.uploaddocuments.models._
-import uk.gov.hmrc.uploaddocuments.services.FileUploadJourneyServiceWithHeaderCarrier
+import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
@@ -35,7 +35,7 @@ import scala.concurrent.Future
 
 @Singleton
 class FileUploadJourneyController @Inject() (
-  fileUploadJourneyService: FileUploadJourneyServiceWithHeaderCarrier,
+  fileUploadJourneyService: SessionStateService,
   views: uk.gov.hmrc.uploaddocuments.views.FileUploadViews,
   upscanInitiateConnector: UpscanInitiateConnector,
   fileUploadResultPushConnector: FileUploadResultPushConnector,
@@ -114,19 +114,6 @@ class FileUploadJourneyController @Inject() (
   // --------------------------------------------- //
   //                    ACTIONS                    //
   // --------------------------------------------- //
-
-  // POST /initialize
-  final val initialize: Action[AnyContent] =
-    whenAuthenticatedInBackchannel
-      .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
-      .applyWithRequest { implicit request =>
-        Transitions.initialize(HostService.from(request))
-      }
-      .displayUsing(renderInitializationResponse)
-      .recover {
-        case e: JsonParseException => BadRequest(e.getMessage())
-        case e                     => InternalServerError
-      }
 
   // GET /
   final val start: Action[AnyContent] =

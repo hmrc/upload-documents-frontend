@@ -52,7 +52,7 @@ trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[
     else currentState :: breadcrumbsRetentionStrategy(currentBreadcrumbs)
 }
 
-trait FileUploadJourneyServiceWithHeaderCarrier extends FileUploadJourneyService[HeaderCarrier]
+trait SessionStateService extends FileUploadJourneyService[HeaderCarrier]
 
 @Singleton
 case class MongoDBCachedFileUploadJourneyService @Inject() (
@@ -60,7 +60,7 @@ case class MongoDBCachedFileUploadJourneyService @Inject() (
   config: Config,
   appConfig: AppConfig,
   actorSystem: ActorSystem
-) extends MongoDBCachedJourneyService[HeaderCarrier] with FileUploadJourneyServiceWithHeaderCarrier {
+) extends MongoDBCachedJourneyService[HeaderCarrier] with SessionStateService {
 
   override final val stateFormats: Format[model.State] =
     FileUploadJourneyStateFormats.formats

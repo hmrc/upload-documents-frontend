@@ -26,8 +26,8 @@ import uk.gov.hmrc.uploaddocuments.support.UploadLog
 
 object FileUploadJourneyModel extends JourneyModel {
 
-  sealed trait State
-  sealed trait IsTransient extends State
+  type State = uk.gov.hmrc.uploaddocuments.journeys.State
+  trait IsTransient extends State
 
   override val root: State = State.Uninitialized
 

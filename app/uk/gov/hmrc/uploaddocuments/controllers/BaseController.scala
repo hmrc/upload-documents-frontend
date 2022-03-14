@@ -19,48 +19,40 @@ package uk.gov.hmrc.uploaddocuments.controllers
 import play.api.i18n.I18nSupport
 import play.api.mvc._
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.{Utf8MimeTypes, WithJsonBody}
-import uk.gov.hmrc.play.fsm.{JourneyController, JourneyService}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.uploaddocuments.connectors.FrontendAuthConnector
+import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 import uk.gov.hmrc.uploaddocuments.support.SHA256
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future
 
-/** Base controller class for a journey. */
-abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
-  val journeyService: S,
-  appConfig: AppConfig,
+@Singleton
+class BaseControllerComponents @Inject() (
+  val sessionStateService: SessionStateService,
+  val appConfig: AppConfig,
   val authConnector: FrontendAuthConnector,
-  val env: Environment,
-  val config: Configuration
-) extends MessagesBaseController with Utf8MimeTypes with WithJsonBody with I18nSupport with AuthActions
-    with JourneyController[HeaderCarrier] {
+  val environment: Environment,
+  val configuration: Configuration,
+  val messagesControllerComponents: MessagesControllerComponents
+)
 
-  final override val actionBuilder = controllerComponents.actionBuilder
-  final override val messagesApi = controllerComponents.messagesApi
+abstract class BaseController(
+  components: BaseControllerComponents
+) extends MessagesBaseController with Utf8MimeTypes with WithJsonBody with I18nSupport with AuthActions {
 
-  implicit val ec: ExecutionContext = controllerComponents.executionContext
+  final def config: Configuration = components.configuration
+  final def env: Environment = components.environment
+  final def authConnector: AuthConnector = components.authConnector
+  final protected def controllerComponents: MessagesControllerComponents = components.messagesControllerComponents
 
-  final val AsFrontendUser: WithAuthorised[Unit] = { implicit request => body =>
-    val hc = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-    authorisedWithoutEnrolment(_ => body(()))(request, hc, ec)
+  implicit class FutureOps[A](value: A) {
+    def asFuture: Future[A] = Future.successful(value)
   }
-
-  final val whenAuthenticated = actions.whenAuthorised(AsFrontendUser)
-
-  final val AsBackchannelUser: WithAuthorised[Unit] = { implicit request => body =>
-    val hc = HeaderCarrierConverter.fromRequest(request)
-    whenAuthorisedWithoutEnrolmentReturningForbidden(_ => body(()))(hc, ec)
-  }
-
-  final val whenAuthenticatedInBackchannel = actions.whenAuthorised(AsBackchannelUser)
-
-  // ------------------------------------
-  // Retrieval of journeyId configuration
-  // ------------------------------------
 
   private val journeyIdPathParamRegex = ".*?/journey/([a-fA-F0-9]+?)/.*".r
 
@@ -76,21 +68,22 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
     })
       .orElse(hc.sessionId.map(_.value).map(SHA256.compute))
 
-  final override implicit def context(implicit rh: RequestHeader): HeaderCarrier = {
+  final implicit def context(implicit rh: RequestHeader): HeaderCarrier = {
     val hc = decodeHeaderCarrier(rh)
     journeyId(hc, rh)
-      .map(jid => hc.withExtraHeaders(journeyService.journeyKey -> jid))
+      .map(jid => hc.withExtraHeaders(components.sessionStateService.journeyKey -> jid))
       .getOrElse(hc)
   }
 
   private def decodeHeaderCarrier(rh: RequestHeader): HeaderCarrier =
     HeaderCarrierConverter.fromRequestAndSession(rh, rh.session)
 
-  final override def withValidRequest(
+  final def whenJourneyIdAvailable(
     body: => Future[Result]
-  )(implicit rc: HeaderCarrier, request: Request[_], ec: ExecutionContext): Future[Result] =
+  )(implicit request: Request[_]): Future[Result] =
     journeyId match {
-      case None => Future.successful(Redirect(appConfig.govukStartUrl))
+      case None => Future.successful(Redirect(components.appConfig.govukStartUrl))
       case _    => body
     }
+
 }

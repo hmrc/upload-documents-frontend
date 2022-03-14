@@ -119,7 +119,7 @@ trait AuthActionISpecSetup extends AppISpec {
       })
 
     def testAuhorizedWithoutEnrolmentReturningForbidden[A]: Result =
-      await(super.authorisedWithoutEnrolmentReturningForbidden { case (uid, res) =>
+      await(super.whenAuthorisedWithoutEnrolmentReturningForbidden { case (uid, res) =>
         Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
       })
   }

@@ -1,0 +1,5 @@
+# internal (backchannel) routes
+
+# endpoint to (re)initialize documents upload session
++ nocsrf
+POST       /initialize                                                      @uk.gov.hmrc.uploaddocuments.controllers.internal.InitializeController.initialize

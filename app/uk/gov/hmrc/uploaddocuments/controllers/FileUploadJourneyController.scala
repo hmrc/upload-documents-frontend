@@ -118,17 +118,6 @@ class FileUploadJourneyController @Inject() (
   //                    ACTIONS                    //
   // --------------------------------------------- //
 
-  // GET /
-  final val start: Action[AnyContent] =
-    action { implicit request =>
-      Future.successful(
-        if (preferUploadMultipleFiles)
-          Redirect(routes.FileUploadJourneyController.showChooseMultipleFiles)
-        else
-          Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
-      )
-    }
-
   // GET /continue-to-host
   final val continueToHost: Action[AnyContent] =
     whenAuthenticated

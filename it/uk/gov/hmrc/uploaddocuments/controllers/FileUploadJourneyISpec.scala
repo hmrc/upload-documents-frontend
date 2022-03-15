@@ -555,29 +555,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /" should {
-      "show the start page when no cookie set" in {
-        val state = Initialized(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-        sessionStateService.setState(state)
-        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-
-        val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
-        givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
-
-        val result = await(request("/").get())
-
-        result.status shouldBe 200
-        result.body should include("url=/upload-documents/choose-files")
-
-        sessionStateService.getState shouldBe state
-      }
-
-    }
-
     "GET /choose-files" should {
       "show the upload multiple files page when cookie set" in {
         val state = Initialized(

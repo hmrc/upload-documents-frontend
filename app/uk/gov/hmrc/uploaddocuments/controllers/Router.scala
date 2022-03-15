@@ -27,6 +27,13 @@ class Router @Inject() (appConfig: AppConfig) {
 
   final val controller = routes.FileUploadJourneyController
 
+  /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
+    */
+  final val COOKIE_JSENABLED = "jsenabled"
+
+  final def preferUploadMultipleFiles(implicit rh: RequestHeader): Boolean =
+    rh.cookies.get(COOKIE_JSENABLED).isDefined
+
   final def routeTo(state: State): Call =
     state match {
       case State.Initialized(context, fileUploads) =>

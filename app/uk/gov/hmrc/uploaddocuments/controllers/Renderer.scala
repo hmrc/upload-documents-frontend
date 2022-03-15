@@ -45,13 +45,6 @@ class Renderer @Inject() (
 
   final val controller = routes.FileUploadJourneyController
 
-  /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
-    */
-  final val COOKIE_JSENABLED = "jsenabled"
-
-  final def preferUploadMultipleFiles(implicit rh: RequestHeader): Boolean =
-    rh.cookies.get(COOKIE_JSENABLED).isDefined
-
   import uk.gov.hmrc.play.fsm.OptionalFormOps._
 
   final def resultOf(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
@@ -63,7 +56,7 @@ class Renderer @Inject() (
         Redirect(appConfig.govukStartUrl)
 
       case State.Initialized(config, fileUploads) =>
-        if (preferUploadMultipleFiles)
+        if (router.preferUploadMultipleFiles)
           Redirect(controller.showChooseMultipleFiles)
         else
           Redirect(controller.showChooseFile)
@@ -220,7 +213,7 @@ class Renderer @Inject() (
               if (!context.config.features.showUploadMultiple)
                 routes.FileUploadJourneyController.showChooseFile
               else
-                routes.FileUploadJourneyController.start
+                routes.StartController.start
             ).url
         )
       case _ => BadRequest

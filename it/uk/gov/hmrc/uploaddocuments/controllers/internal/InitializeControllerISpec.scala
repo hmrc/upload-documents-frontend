@@ -12,25 +12,25 @@ class InitializeControllerISpec extends ControllerISpecBase {
 
   "InitializeController" when {
 
-    "POST /initialize" should {
+    "POST /internal/initialize" should {
       "return 404 if wrong http method" in {
-        journey.setState(State.Uninitialized)
+        sessionStateService.setState(State.Uninitialized)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(backchannelRequest("/initialize").get())
         result.status shouldBe 404
-        journey.getState shouldBe State.Uninitialized
+        sessionStateService.getState shouldBe State.Uninitialized
       }
 
       "return 400 if malformed payload" in {
-        journey.setState(State.Uninitialized)
+        sessionStateService.setState(State.Uninitialized)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(backchannelRequest("/initialize").post(""))
         result.status shouldBe 400
-        journey.getState shouldBe State.Uninitialized
+        sessionStateService.getState shouldBe State.Uninitialized
       }
 
       "return 400 if cannot accept payload" in {
-        journey.setState(State.Uninitialized)
+        sessionStateService.setState(State.Uninitialized)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           backchannelRequest("/initialize")
@@ -49,18 +49,18 @@ class InitializeControllerISpec extends ControllerISpecBase {
             )
         )
         result.status shouldBe 400
-        journey.getState shouldBe State.Uninitialized
+        sessionStateService.getState shouldBe State.Uninitialized
       }
 
       "register config and empty file uploads" in {
-        journey.setState(State.Uninitialized)
+        sessionStateService.setState(State.Uninitialized)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           backchannelRequest("/initialize")
             .post(Json.toJson(FileUploadInitializationRequest(fileUploadSessionConfig, Seq.empty)))
         )
         result.status shouldBe 201
-        journey.getState shouldBe State.Initialized(
+        sessionStateService.getState shouldBe State.Initialized(
           FileUploadContext(
             fileUploadSessionConfig,
             HostService.Any
@@ -82,7 +82,7 @@ class InitializeControllerISpec extends ControllerISpecBase {
             cargo = Some(Json.obj("foo" -> JsString("bar")))
           )
         )
-        journey.setState(State.Uninitialized)
+        sessionStateService.setState(State.Uninitialized)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           backchannelRequest("/initialize")
@@ -96,7 +96,7 @@ class InitializeControllerISpec extends ControllerISpecBase {
             )
         )
         result.status shouldBe 201
-        journey.getState shouldBe State.Initialized(
+        sessionStateService.getState shouldBe State.Initialized(
           FileUploadContext(
             fileUploadSessionConfig,
             HostService.Any

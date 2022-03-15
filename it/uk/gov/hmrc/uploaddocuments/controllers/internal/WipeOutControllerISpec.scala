@@ -10,7 +10,7 @@ class WipeOutControllerISpec extends ControllerISpecBase {
 
   "WipeOutController" when {
 
-    "POST /wipe-out" should {
+    "POST /internal/wipe-out" should {
       "return 404 if wrong http method" in {
         val state = State.Initialized(
           FileUploadContext(
@@ -19,11 +19,11 @@ class WipeOutControllerISpec extends ControllerISpecBase {
           ),
           FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(backchannelRequest("/wipe-out").get())
         result.status shouldBe 404
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
       "return 204 and cleanup session state" in {
@@ -34,11 +34,11 @@ class WipeOutControllerISpec extends ControllerISpecBase {
           ),
           FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(backchannelRequest("/wipe-out").post(""))
         result.status shouldBe 204
-        journey.getState shouldBe State.Uninitialized
+        sessionStateService.getState shouldBe State.Uninitialized
       }
     }
   }

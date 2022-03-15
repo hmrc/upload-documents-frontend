@@ -16,34 +16,45 @@
 
 package uk.gov.hmrc.uploaddocuments.controllers.internal
 
+import com.fasterxml.jackson.core.JsonParseException
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents}
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class WipeOutController @Inject() (
+class CallbackFromUpscanController @Inject() (
   sessionStateService: SessionStateService,
+  fileUploadResultPushConnector: FileUploadResultPushConnector,
   components: BaseControllerComponents
 )(implicit ec: ExecutionContext)
     extends BaseController(components) {
 
-  // POST /internal/wipe-out
-  final val wipeOut: Action[AnyContent] =
+  // POST /callback-from-upscan/journey/:journeyId/:nonce
+  final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
     Action.async { implicit request =>
       whenJourneyIdKnown {
-        val hc = HeaderCarrierConverter.fromRequest(request) // required to process Session-ID from the cookie
-        whenAuthorisedWithoutEnrolmentReturningForbidden { _ =>
-          val sessionStateUpdate = FileUploadJourneyModel.Transitions.wipeOut
-          sessionStateService
-            .apply(sessionStateUpdate)
-            .map(_ => NoContent)
-            .andThen { case _ => sessionStateService.cleanBreadcrumbs() }
-        }(hc, ec)
+        Future(request.body.asJson.flatMap(_.asOpt[UpscanNotification]))
+          .flatMap {
+            case Some(payload) =>
+              val sessionStateUpdate =
+                FileUploadJourneyModel.Transitions
+                  .upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))(payload)
+              sessionStateService
+                .apply(sessionStateUpdate)
+                .map(_ => NoContent)
+
+            case None => BadRequest.asFuture
+          }
+          .recover {
+            case e: JsonParseException => BadRequest(e.getMessage())
+            case e                     => InternalServerError
+          }
       }
     }
 

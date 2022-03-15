@@ -12,7 +12,7 @@ import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyStateFormats
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, KeyProvider, MongoDBCachedJourneyService}
-import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestJourneyService}
+import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestSessionStateService}
 
 import java.time.ZonedDateTime
 
@@ -23,7 +23,7 @@ trait ControllerISpecBase extends ServerISpec with StateMatchers {
   import play.api.i18n._
   implicit val messages: Messages = MessagesImpl(Lang("en"), app.injector.instanceOf[MessagesApi])
 
-  lazy val journey = new TestJourneyService[JourneyId]
+  lazy val sessionStateService = new TestSessionStateService[JourneyId]
     with FileUploadJourneyService[JourneyId] with MongoDBCachedJourneyService[JourneyId] {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]

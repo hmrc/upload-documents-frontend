@@ -2,8 +2,8 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{Format, JsNumber, JsObject, JsString, JsValue, Json}
+import play.api.http.HeaderNames
+import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, StandaloneWSRequest}
 import play.api.mvc.{AnyContent, Call, Cookie, Request, Session}
 import play.api.test.FakeRequest
@@ -15,7 +15,7 @@ import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, KeyProvider, MongoDBCachedJourneyService}
 import uk.gov.hmrc.uploaddocuments.stubs.{ExternalApiStubs, UpscanInitiateStubs}
-import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestJourneyService}
+import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestSessionStateService}
 
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime, ZonedDateTime}
@@ -24,7 +24,7 @@ import scala.util.Random
 
 class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalApiStubs with UpscanInitiateStubs {
 
-  import journey.model.State._
+  import sessionStateService.model.State._
 
   implicit val journeyId: JourneyId = JourneyId("sadasdjkasdhuqyhwa326176318346674e764764")
 
@@ -99,7 +99,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           context,
           fileUploads = nonEmptyFileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -108,7 +108,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nonEmptyFileUploads
         )
@@ -122,7 +122,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -131,7 +131,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
       }
 
       "redirect to the continueWhenEmptyUrl if empty file uploads" in {
@@ -143,13 +143,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-empty")
 
         val result = await(request("/continue-to-host").get())
 
-        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
 
         result.status shouldBe 200
         result.body shouldBe expected
@@ -163,7 +163,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -172,7 +172,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -187,7 +187,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-full")
 
@@ -196,7 +196,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -216,7 +216,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           context,
           fileUploads = nonEmptyFileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -225,7 +225,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nonEmptyFileUploads
         )
@@ -239,7 +239,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -248,7 +248,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
       }
 
       "redirect to the continueWhenEmptyUrl if answer is no and empty file uploads" in {
@@ -260,13 +260,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-empty")
 
         val result = await(request("/continue-to-host").post(Map("choice" -> "no")))
 
-        journey.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe ContinueToHost(context, fileUploads = FileUploads())
 
         result.status shouldBe 200
         result.body shouldBe expected
@@ -280,7 +280,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -289,7 +289,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -304,7 +304,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-full")
 
@@ -313,7 +313,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -331,7 +331,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           context,
           fileUploads = nonEmptyFileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/backlink-url")
 
@@ -340,7 +340,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nonEmptyFileUploads
         )
@@ -354,7 +354,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/backlink-url")
 
@@ -363,7 +363,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe Initialized(context, fileUploads = FileUploads())
       }
 
       "redirect to the backlinkUrl if answer is yes and empty file uploads" in {
@@ -375,13 +375,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/backlink-url")
 
         val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
 
-        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe Initialized(context, fileUploads = FileUploads())
 
         result.status shouldBe 200
         result.body shouldBe expected
@@ -395,7 +395,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/backlink-url")
 
@@ -404,7 +404,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -419,7 +419,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/backlink-url")
 
@@ -428,7 +428,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -447,7 +447,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           context,
           fileUploads = nonEmptyFileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-yes")
 
@@ -456,7 +456,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nonEmptyFileUploads
         )
@@ -471,7 +471,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-yes")
 
@@ -480,7 +480,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe Initialized(context, fileUploads = FileUploads())
       }
 
       "redirect to the continueAfterYesAnswerUrl if answer is yes and empty file uploads" in {
@@ -493,13 +493,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-yes")
 
         val result = await(request("/continue-to-host").post(Map("choice" -> "yes")))
 
-        journey.getState shouldBe Initialized(context, fileUploads = FileUploads())
+        sessionStateService.getState shouldBe Initialized(context, fileUploads = FileUploads())
 
         result.status shouldBe 200
         result.body shouldBe expected
@@ -514,7 +514,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-yes")
 
@@ -523,7 +523,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -539,7 +539,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
         )
         val state = ContinueToHost(context, fileUploads = nFileUploads(context.config.maximumNumberOfFiles))
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url-if-yes")
 
@@ -548,7 +548,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body shouldBe expected
 
-        journey.getState shouldBe Initialized(
+        sessionStateService.getState shouldBe Initialized(
           context,
           fileUploads = nFileUploads(context.config.maximumNumberOfFiles)
         )
@@ -561,7 +561,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val callbackUrl =
@@ -573,7 +573,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include("url=/upload-documents/choose-files")
 
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
     }
@@ -584,7 +584,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(requestWithCookies("/choose-files", controller.COOKIE_JSENABLED -> "true").get())
@@ -592,7 +592,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
         result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe UploadMultipleFiles(
+        sessionStateService.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
@@ -603,7 +603,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val callbackUrl =
@@ -616,7 +616,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
 
-        journey.getState shouldBe UploadSingleFile(
+        sessionStateService.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -646,7 +646,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/choose-files").get())
@@ -654,7 +654,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
         result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
       "retreat from finished to the upload multiple files page " in {
@@ -662,7 +662,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(requestWithCookies("/choose-files", controller.COOKIE_JSENABLED -> "true").get())
@@ -670,7 +670,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
         result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe UploadMultipleFiles(
+        sessionStateService.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
@@ -683,7 +683,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -712,7 +712,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
 
-        journey.getState shouldBe
+        sessionStateService.getState shouldBe
           UploadMultipleFiles(
             FileUploadContext(fileUploadSessionConfig),
             fileUploads = FileUploads(files =
@@ -753,7 +753,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             Seq(FileUpload.Posted(Nonce.Any, Timestamp.Any, "23370e18-6e24-453e-b45a-76d3e32ea389"))
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -782,7 +782,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
 
-        journey.getState shouldBe
+        sessionStateService.getState shouldBe
           UploadMultipleFiles(
             FileUploadContext(fileUploadSessionConfig),
             fileUploads = FileUploads(files =
@@ -821,7 +821,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /choose-file" should {
       "show the upload page of first document" in {
         val state = Initialized(FileUploadContext(fileUploadSessionConfig), FileUploads())
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -833,7 +833,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
 
-        journey.getState shouldBe UploadSingleFile(
+        sessionStateService.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -877,7 +877,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -889,7 +889,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
 
-        journey.getState shouldBe Summary(
+        sessionStateService.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -939,7 +939,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -951,7 +951,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.summary.plural.title", "2"))
         result.body should include(htmlEscapedMessage("view.summary.plural.heading", "2"))
 
-        journey.getState shouldBe Summary(
+        sessionStateService.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -985,7 +985,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /file-verification" should {
       "display waiting for file verification page" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
@@ -1006,7 +1006,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.waiting"))
         result.body should include(htmlEscapedMessage("view.upload-file.waiting"))
 
-        journey.getState shouldBe (
+        sessionStateService.getState shouldBe (
           WaitingForFileVerification(
             FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
@@ -1025,7 +1025,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /journey/:journeyId/file-rejected" should {
       "set current file upload status as rejected and return 204 NoContent" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
@@ -1049,7 +1049,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         result1.status shouldBe 204
         result1.body.isEmpty shouldBe true
-        journey.getState shouldBe (
+        sessionStateService.getState shouldBe (
           UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
@@ -1081,7 +1081,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /journey/:journeyId/file-verification" should {
       "set current file upload status as posted and return 204 NoContent" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
@@ -1101,7 +1101,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         result1.status shouldBe 202
         result1.body.isEmpty shouldBe true
-        journey.getState shouldBe (
+        sessionStateService.getState shouldBe (
           WaitingForFileVerification(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
@@ -1168,7 +1168,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           ),
           acknowledged = false
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result1 =
@@ -1178,42 +1178,42 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         result1.status shouldBe 200
         result1.body shouldBe """{"reference":"11370e18-6e24-453e-b45a-76d3e32ea33d","fileStatus":"NOT_UPLOADED","uploadRequest":{"href":"https://s3.amazonaws.com/bucket/123abc","fields":{"foo1":"bar1"}}}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result2 =
           await(request("/file-verification/2b72fe99-8adf-4edb-865e-622ae710f77c/status").get())
         result2.status shouldBe 200
         result2.body shouldBe """{"reference":"2b72fe99-8adf-4edb-865e-622ae710f77c","fileStatus":"WAITING"}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result3 =
           await(request("/file-verification/f029444f-415c-4dec-9cf2-36774ec63ab8/status").get())
         result3.status shouldBe 200
         result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/preview/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result4 =
           await(request("/file-verification/4b1e15a4-4152-4328-9448-4924d9aee6e2/status").get())
         result4.status shouldBe 200
         result4.body shouldBe """{"reference":"4b1e15a4-4152-4328-9448-4924d9aee6e2","fileStatus":"FAILED","errorMessage":"The selected file contains a virus - upload a different one"}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result5 =
           await(request("/file-verification/f0e317f5-d394-42cc-93f8-e89f4fc0114c/status").get())
         result5.status shouldBe 404
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result6 =
           await(request("/file-verification/4b1e15a4-4152-4328-9448-4924d9aee6e3/status").get())
         result6.status shouldBe 200
         result6.body shouldBe """{"reference":"4b1e15a4-4152-4328-9448-4924d9aee6e3","fileStatus":"REJECTED","errorMessage":"The selected file could not be uploaded"}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
 
         val result7 =
           await(request("/file-verification/4b1e15a4-4152-4328-9448-4924d9aee6e4/status").get())
         result7.status shouldBe 200
         result7.body shouldBe """{"reference":"4b1e15a4-4152-4328-9448-4924d9aee6e4","fileStatus":"DUPLICATE","errorMessage":"The selected file has already been uploaded"}"""
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
     }
 
@@ -1223,7 +1223,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files = Seq(TestData.acceptedFileUpload))
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/summary").get())
@@ -1231,7 +1231,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
       "show uploaded plural file view" in {
@@ -1264,7 +1264,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/summary").get())
@@ -1272,7 +1272,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.summary.plural.title", "2"))
         result.body should include(htmlEscapedMessage("view.summary.plural.heading", "2"))
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
       "show file upload summary view" in {
@@ -1280,7 +1280,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = nFileUploads(FILES_LIMIT)
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/summary").get())
@@ -1288,7 +1288,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.summary.plural.title", FILES_LIMIT.toString))
         result.body should include(htmlEscapedMessage("view.summary.plural.heading", FILES_LIMIT.toString))
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
     }
 
@@ -1301,7 +1301,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -1315,7 +1315,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
-        journey.getState shouldBe UploadSingleFile(
+        sessionStateService.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -1348,7 +1348,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
@@ -1362,7 +1362,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
-        journey.getState shouldBe UploadSingleFile(
+        sessionStateService.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -1395,7 +1395,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -1404,7 +1404,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             .post(Map("choice" -> "yes"))
         )
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1420,7 +1420,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -1429,7 +1429,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             .post(Map("choice" -> "no"))
         )
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1444,7 +1444,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
@@ -1453,7 +1453,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             .post(Map("choice" -> "no"))
         )
 
-        journey.getState shouldBe ContinueToHost(
+        sessionStateService.getState shouldBe ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1465,7 +1465,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /file-rejected" should {
       "show upload document again" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
@@ -1489,7 +1489,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
-        journey.getState shouldBe UploadSingleFile(
+        sessionStateService.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           "2b72fe99-8adf-4edb-865e-622ae710f77c",
           UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -1510,7 +1510,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "POST /file-rejected" should {
       "mark file upload as rejected" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadMultipleFiles(
             FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
@@ -1535,7 +1535,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         result.status shouldBe 201
 
-        journey.getState shouldBe UploadMultipleFiles(
+        sessionStateService.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
@@ -1606,7 +1606,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").get())
@@ -1614,7 +1614,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
-        journey.getState shouldBe Summary(
+        sessionStateService.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -1692,14 +1692,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").post(""))
 
         result.status shouldBe 204
 
-        journey.getState shouldBe UploadMultipleFiles(
+        sessionStateService.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -1756,7 +1756,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           ),
           acknowledged = false
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result =
@@ -1769,7 +1769,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.header("Content-Length") shouldBe Some(s"${bytes.length}")
         result.header("Content-Disposition") shouldBe Some("""inline; filename="test.pdf"; filename*=utf-8''test.pdf""")
         result.bodyAsBytes.toArray[Byte] shouldBe bytes
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
 
       "return error page if file does not exist" in {
@@ -1802,7 +1802,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           ),
           acknowledged = false
         )
-        journey.setState(state)
+        sessionStateService.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result =
@@ -1813,13 +1813,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("global.error.500.title"))
         result.body should include(htmlEscapedMessage("global.error.500.heading"))
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
     }
 
     "GET /journey/:journeyId/file-posted" should {
       "set current file upload status as posted and return 201 Created" in {
-        journey.setState(
+        sessionStateService.setState(
           UploadMultipleFiles(
             FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
@@ -1842,7 +1842,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 201
         result.body.isEmpty shouldBe true
         result.headerValues(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN) shouldBe Seq("*")
-        journey.getState should beState(
+        sessionStateService.getState should beState(
           UploadMultipleFiles(
             FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
@@ -1853,296 +1853,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             )
           )
         )
-      }
-    }
-
-    "POST /callback-from-upscan/journey/:journeyId" should {
-      "return 400 if callback body invalid" in {
-        val nonce = Nonce.random
-        journey.setState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-        val result =
-          await(
-            backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
-            )
-              .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-              .post(
-                Json.obj(
-                  "reference" -> JsString("2b72fe99-8adf-4edb-865e-622ae710f77c")
-                )
-              )
-          )
-
-        result.status shouldBe 400
-        journey.getState should beState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-        eventually {
-          verifyResultPushHasNotHappened("/continue")
-        }
-      }
-
-      "modify file status to Accepted and return 204" in {
-        val nonce = Nonce.random
-        givenResultPushEndpoint(
-          "/result-post-url",
-          FileUploadResultPushConnector.Payload.from(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Accepted(
-                  nonce,
-                  Timestamp.Any,
-                  "2b72fe99-8adf-4edb-865e-622ae710f77c",
-                  "https://foo.bar/XYZ123/foo.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-                  "foo.pdf",
-                  "application/pdf",
-                  1
-                ),
-                FileUpload.Accepted(
-                  Nonce.Any,
-                  Timestamp.Any,
-                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
-                  "https://foo.bar/XYZ123/bar.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
-                  "bar.pdf",
-                  "application/pdf",
-                  1,
-                  Some(Json.obj("bar" -> 1))
-                )
-              )
-            ),
-            "http://base.external.callback"
-          ),
-          204
-        )
-        journey.setState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c"),
-                FileUpload.Accepted(
-                  Nonce.Any,
-                  Timestamp.Any,
-                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
-                  "https://foo.bar/XYZ123/bar.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
-                  "bar.pdf",
-                  "application/pdf",
-                  1,
-                  Some(Json.obj("bar" -> 1))
-                )
-              )
-            )
-          )
-        )
-        val result =
-          await(
-            backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
-            )
-              .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-              .post(
-                Json.obj(
-                  "reference"   -> JsString("2b72fe99-8adf-4edb-865e-622ae710f77c"),
-                  "fileStatus"  -> JsString("READY"),
-                  "downloadUrl" -> JsString("https://foo.bar/XYZ123/foo.pdf"),
-                  "uploadDetails" -> Json.obj(
-                    "uploadTimestamp" -> JsString("2018-04-24T09:30:00Z"),
-                    "checksum"        -> JsString("396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100"),
-                    "fileName"        -> JsString("foo.pdf"),
-                    "fileMimeType"    -> JsString("application/pdf"),
-                    "size"            -> JsNumber(1)
-                  )
-                )
-              )
-          )
-
-        result.status shouldBe 204
-        journey.getState should beState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Accepted(
-                  nonce,
-                  Timestamp.Any,
-                  "2b72fe99-8adf-4edb-865e-622ae710f77c",
-                  "https://foo.bar/XYZ123/foo.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-                  "foo.pdf",
-                  "application/pdf",
-                  1
-                ),
-                FileUpload.Accepted(
-                  Nonce.Any,
-                  Timestamp.Any,
-                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
-                  "https://foo.bar/XYZ123/bar.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
-                  "bar.pdf",
-                  "application/pdf",
-                  1,
-                  Some(Json.obj("bar" -> 1))
-                )
-              )
-            )
-          )
-        )
-        eventually {
-          verifyResultPushHasHappened("/result-post-url", 1)
-        }
-      }
-
-      "keep file status Accepted and return 204" in {
-        val nonce = Nonce.random
-        journey.setState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Accepted(
-                  nonce,
-                  Timestamp.Any,
-                  "2b72fe99-8adf-4edb-865e-622ae710f77c",
-                  "https://foo.bar/XYZ123/foo.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-                  "foo.pdf",
-                  "application/pdf",
-                  1
-                )
-              )
-            )
-          )
-        )
-        val result =
-          await(
-            backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
-            )
-              .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-              .post(
-                Json.obj(
-                  "reference"   -> JsString("2b72fe99-8adf-4edb-865e-622ae710f77c"),
-                  "fileStatus"  -> JsString("READY"),
-                  "downloadUrl" -> JsString("https://foo.bar/XYZ123/foo.pdf"),
-                  "uploadDetails" -> Json.obj(
-                    "uploadTimestamp" -> JsString("2018-04-24T09:30:00Z"),
-                    "checksum"        -> JsString("396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100"),
-                    "fileName"        -> JsString("foo.pdf"),
-                    "fileMimeType"    -> JsString("application/pdf"),
-                    "size"            -> JsNumber(1)
-                  )
-                )
-              )
-          )
-
-        result.status shouldBe 204
-        journey.getState should beState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Accepted(
-                  nonce,
-                  Timestamp.Any,
-                  "2b72fe99-8adf-4edb-865e-622ae710f77c",
-                  "https://foo.bar/XYZ123/foo.pdf",
-                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-                  "foo.pdf",
-                  "application/pdf",
-                  1
-                )
-              )
-            )
-          )
-        )
-        eventually {
-          verifyResultPushHasNotHappened("/continue")
-        }
-      }
-
-      "change nothing if nonce not matching" in {
-        val nonce = Nonce.random
-        journey.setState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-        val result =
-          await(
-            backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/${Nonce.random}"
-            )
-              .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
-              .post(
-                Json.obj(
-                  "reference"   -> JsString("2b72fe99-8adf-4edb-865e-622ae710f77c"),
-                  "fileStatus"  -> JsString("READY"),
-                  "downloadUrl" -> JsString("https://foo.bar/XYZ123/foo.pdf"),
-                  "uploadDetails" -> Json.obj(
-                    "uploadTimestamp" -> JsString("2018-04-24T09:30:00Z"),
-                    "checksum"        -> JsString("396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100"),
-                    "fileName"        -> JsString("foo.pdf"),
-                    "fileMimeType"    -> JsString("application/pdf"),
-                    "size"            -> JsNumber(1)
-                  )
-                )
-              )
-          )
-
-        result.status shouldBe 204
-        journey.getState should beState(
-          UploadMultipleFiles(
-            FileUploadContext(fileUploadSessionConfig),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-        eventually {
-          verifyResultPushHasNotHappened("/continue")
-        }
       }
     }
 
@@ -2174,14 +1884,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /foo" should {
       "return an error page not found" in {
-        val state = journey.getState
+        val state = sessionStateService.getState
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result = await(request("/foo").get())
 
         result.status shouldBe 404
         result.body should include("Page not found")
-        journey.getState shouldBe state
+        sessionStateService.getState shouldBe state
       }
     }
   }
@@ -2200,7 +1910,7 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
 
   lazy val controller = app.injector.instanceOf[FileUploadJourneyController]
 
-  lazy val journey = new TestJourneyService[JourneyId]
+  lazy val sessionStateService = new TestSessionStateService[JourneyId]
     with FileUploadJourneyService[JourneyId] with MongoDBCachedJourneyService[JourneyId] {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]

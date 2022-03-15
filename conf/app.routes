@@ -20,10 +20,6 @@ GET        /upload-documents/journey/:journeyId/file-rejected                   
 OPTIONS    /upload-documents/journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
 GET        /upload-documents/journey/:journeyId/file-verification                    @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncWaitingForFileVerification(journeyId: String)
 
-# backchannel endpoint to receive upscan notification
-+ nocsrf
-POST       /internal/callback-from-upscan/journey/:journeyId/:nonce                  @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.callbackFromUpscan(journeyId: String, nonce: String)
-
 GET        /upload-documents/file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
 GET        /upload-documents/file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
 

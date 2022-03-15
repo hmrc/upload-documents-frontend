@@ -8,7 +8,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 /** Intended to be mixed-in when binding a real service for integration testing, exposes protected service's methods to
   * the test.
   */
-trait TestJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
+trait TestSessionStateService[RequestContext] extends PersistentJourneyService[RequestContext] {
 
   def set(state: model.State, breadcrumbs: List[model.State])(implicit
     requestContext: RequestContext,

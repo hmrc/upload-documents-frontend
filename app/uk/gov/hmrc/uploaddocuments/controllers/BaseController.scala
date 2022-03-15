@@ -78,7 +78,7 @@ abstract class BaseController(
   private def decodeHeaderCarrier(rh: RequestHeader): HeaderCarrier =
     HeaderCarrierConverter.fromRequestAndSession(rh, rh.session)
 
-  final def whenJourneyIdAvailable(
+  final def whenJourneyIdKnown(
     body: => Future[Result]
   )(implicit request: Request[_]): Future[Result] =
     journeyId match {

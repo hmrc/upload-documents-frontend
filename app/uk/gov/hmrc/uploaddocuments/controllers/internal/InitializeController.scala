@@ -17,25 +17,20 @@
 package uk.gov.hmrc.uploaddocuments.controllers.internal
 
 import com.fasterxml.jackson.core.JsonParseException
+import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents, Renderer}
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
-import uk.gov.hmrc.uploaddocuments.controllers.Router
-import uk.gov.hmrc.uploaddocuments.controllers.BaseController
-import uk.gov.hmrc.uploaddocuments.controllers.BaseControllerComponents
-import uk.gov.hmrc.uploaddocuments.controllers.Renderer
-import play.api.mvc.{Action, AnyContent}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class InitializeController @Inject() (
   sessionStateService: SessionStateService,
-  router: Router,
-  results: Renderer,
+  renderer: Renderer,
   components: BaseControllerComponents
 )(implicit ec: ExecutionContext)
     extends BaseController(components) {
@@ -43,24 +38,25 @@ class InitializeController @Inject() (
   // POST /internal/initialize
   final val initialize: Action[AnyContent] =
     Action.async { implicit request =>
-      whenJourneyIdAvailable {
+      whenJourneyIdKnown {
         val hc = HeaderCarrierConverter.fromRequest(request) // required to process Session-ID from the cookie
         whenAuthorisedWithoutEnrolmentReturningForbidden { _ =>
-          request.body.asJson.flatMap(_.asOpt[FileUploadInitializationRequest]) match {
-            case Some(payload) =>
-              val sessionStateUpdate =
-                FileUploadJourneyModel.Transitions.initialize(HostService.from(request))(payload)
-              sessionStateService
-                .apply(sessionStateUpdate)
-                .map(results.initializationResponse)
+          Future(request.body.asJson.flatMap(_.asOpt[FileUploadInitializationRequest]))
+            .flatMap {
+              case Some(payload) =>
+                val sessionStateUpdate =
+                  FileUploadJourneyModel.Transitions.initialize(HostService.from(request))(payload)
+                sessionStateService
+                  .apply(sessionStateUpdate)
+                  .map(renderer.initializationResponse)
 
-            case None =>
-              BadRequest.asFuture
-          }
-        }(hc, ec).recover {
-          case e: JsonParseException => BadRequest(e.getMessage())
-          case e                     => InternalServerError
-        }
+              case None => BadRequest.asFuture
+            }
+            .recover {
+              case e: JsonParseException => BadRequest(e.getMessage())
+              case e                     => InternalServerError
+            }
+        }(hc, ec)
       }
     }
 

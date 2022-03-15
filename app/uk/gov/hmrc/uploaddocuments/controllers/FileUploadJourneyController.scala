@@ -54,6 +54,8 @@ class FileUploadJourneyController @Inject() (
     ) with FileStream {
 
   final val controller = routes.FileUploadJourneyController
+  final val callbackFromUpscanController =
+    uk.gov.hmrc.uploaddocuments.controllers.internal.routes.CallbackFromUpscanController
 
   import FileUploadJourneyController._
   import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
@@ -89,7 +91,8 @@ class FileUploadJourneyController @Inject() (
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
-      callbackUrl = appConfig.baseInternalCallbackUrl + controller.callbackFromUpscan(currentJourneyId, nonce).url,
+      callbackUrl = appConfig.baseInternalCallbackUrl +
+        callbackFromUpscanController.callbackFromUpscan(currentJourneyId, nonce).url,
       successRedirect = Some(successRedirect),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
@@ -103,7 +106,8 @@ class FileUploadJourneyController @Inject() (
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
-      callbackUrl = appConfig.baseInternalCallbackUrl + controller.callbackFromUpscan(currentJourneyId, nonce).url,
+      callbackUrl = appConfig.baseInternalCallbackUrl +
+        callbackFromUpscanController.callbackFromUpscan(currentJourneyId, nonce).url,
       successRedirect = Some(successRedirectWhenUploadingMultipleFiles),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
@@ -214,21 +218,6 @@ class FileUploadJourneyController @Inject() (
       .bindForm(UpscanUploadSuccessForm)
       .apply(Transitions.markUploadAsPosted)
       .displayUsing(acknowledgeFileUploadRedirect)
-
-  // POST /callback-from-upscan/journey/:journeyId/:nonce
-  final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
-    actions
-      .parseJsonWithFallback[UpscanNotification](BadRequest)
-      .applyWithRequest(implicit request =>
-        Transitions
-          .upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
-      )
-      .transform {
-        case r if r.header.status < 400 => NoContent
-      }
-      .recover { case e =>
-        InternalServerError
-      }
 
   // GET /summary
   final val showSummary: Action[AnyContent] =

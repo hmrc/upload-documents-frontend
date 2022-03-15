@@ -3,3 +3,7 @@
 # endpoint to (re)initialize documents upload session
 + nocsrf
 POST       /initialize                                                      @uk.gov.hmrc.uploaddocuments.controllers.internal.InitializeController.initialize
+
+# endpoint to effectively wipe-out current session data
++ nocsrf
+POST       /wipe-out                                                        @uk.gov.hmrc.uploaddocuments.controllers.internal.WipeOutController.wipeOut

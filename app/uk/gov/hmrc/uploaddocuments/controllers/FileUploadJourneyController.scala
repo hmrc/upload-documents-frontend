@@ -17,7 +17,6 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.{ActorSystem, Scheduler}
-import com.fasterxml.jackson.core.JsonParseException
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
@@ -138,13 +137,6 @@ class FileUploadJourneyController @Inject() (
     whenAuthenticated
       .bindForm[Boolean](YesNoChoiceForm)
       .apply(Transitions.continueWithYesNo)
-      .andCleanBreadcrumbs()
-
-  // POST /wipe-out
-  final val wipeOut: Action[AnyContent] =
-    whenAuthenticatedInBackchannel
-      .apply(Transitions.wipeOut)
-      .displayUsing(renderWipeOutResponse)
       .andCleanBreadcrumbs()
 
   // GET /choose-files
@@ -477,24 +469,6 @@ class FileUploadJourneyController @Inject() (
         case _ => NotFound
       }
     }
-
-  private def renderInitializationResponse =
-    Renderer.simple {
-      case State.Initialized(context, _) =>
-        Created.withHeaders(
-          HeaderNames.LOCATION ->
-            (
-              if (!context.config.features.showUploadMultiple)
-                routes.FileUploadJourneyController.showChooseFile
-              else
-                routes.FileUploadJourneyController.start
-            ).url
-        )
-      case _ => BadRequest
-    }
-
-  private def renderWipeOutResponse =
-    Renderer.simple { case _ => NoContent }
 
   private def renderFileRemovalStatus =
     Renderer.simple {

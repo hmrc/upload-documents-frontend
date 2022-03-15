@@ -4,10 +4,6 @@
 
 GET        /upload-documents/                                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.start
 
-# backchannel endpoint to effectively wipe-out current session data
-+ nocsrf
-POST       /internal/wipe-out                                                      @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.wipeOut
-
 GET        /upload-documents/choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseMultipleFiles
 GET        /upload-documents/choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseFile
 

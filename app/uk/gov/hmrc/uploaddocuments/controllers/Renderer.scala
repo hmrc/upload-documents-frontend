@@ -226,9 +226,6 @@ class Renderer @Inject() (
       case _ => BadRequest
     }
 
-  final def renderWipeOutResponse =
-    resultOf { case _ => NoContent }
-
   final def renderFileRemovalStatus =
     resultOf {
       case s: State => NoContent

@@ -1,4 +1,4 @@
-->         /                     app.Routes
+->         /upload-documents     app.Routes
 ->         /internal             internal.Routes
 ->         /                     health.Routes
 

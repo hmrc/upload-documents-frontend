@@ -118,12 +118,6 @@ class FileUploadJourneyController @Inject() (
   //                    ACTIONS                    //
   // --------------------------------------------- //
 
-  // GET /choose-files
-  final val showChooseMultipleFiles: Action[AnyContent] =
-    whenAuthenticated
-      .applyWithRequest(implicit request => Transitions.toUploadMultipleFiles(preferUploadMultipleFiles))
-      .redirectOrDisplayIf[State.UploadMultipleFiles]
-
   // POST /initiate-upscan/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthenticated
@@ -254,7 +248,7 @@ class FileUploadJourneyController @Inject() (
         routes.ContinueToHostController.continueToHost
 
       case _: State.UploadMultipleFiles =>
-        controller.showChooseMultipleFiles
+        routes.ChooseMultipleFilesController.showChooseMultipleFiles
 
       case _: State.UploadSingleFile =>
         controller.showChooseFile
@@ -285,7 +279,7 @@ class FileUploadJourneyController @Inject() (
 
       case State.Initialized(config, fileUploads) =>
         if (preferUploadMultipleFiles)
-          Redirect(controller.showChooseMultipleFiles)
+          Redirect(routes.ChooseMultipleFilesController.showChooseMultipleFiles)
         else
           Redirect(controller.showChooseFile)
 

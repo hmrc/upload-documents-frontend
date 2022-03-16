@@ -4,7 +4,7 @@
 
 GET        /                                                        @uk.gov.hmrc.uploaddocuments.controllers.StartController.start
 
-GET        /choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseMultipleFiles
+GET        /choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.ChooseMultipleFilesController.showChooseMultipleFiles
 GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseFile
 
 + nocsrf

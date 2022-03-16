@@ -34,9 +34,9 @@ class StartController @Inject() (
   final val start: Action[AnyContent] =
     Action { implicit request =>
       if (router.preferUploadMultipleFiles)
-        Redirect(routes.FileUploadJourneyController.showChooseMultipleFiles)
+        Redirect(router.showChooseMultipleFiles)
       else
-        Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
+        Ok(views.startView(router.showChooseMultipleFiles))
     }
 
 }

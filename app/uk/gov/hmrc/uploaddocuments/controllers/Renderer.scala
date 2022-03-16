@@ -57,7 +57,7 @@ class Renderer @Inject() (
 
       case State.Initialized(config, fileUploads) =>
         if (router.preferUploadMultipleFiles)
-          Redirect(controller.showChooseMultipleFiles)
+          Redirect(router.showChooseMultipleFiles)
         else
           Redirect(controller.showChooseFile)
 

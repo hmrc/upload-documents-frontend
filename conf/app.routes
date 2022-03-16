@@ -32,7 +32,7 @@ POST       /uploaded/:reference/remove                              @uk.gov.hmrc
 GET        /preview/:reference/:fileName                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
 
 GET        /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.ContinueToHostController.continueToHost
-POST       /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueWithYesNo
+POST       /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.ContinueToHostController.continueWithYesNo
 
 GET        /timedout                                                @uk.gov.hmrc.uploaddocuments.controllers.SessionController.showTimeoutPage
 GET        /keep-alive                                              @uk.gov.hmrc.uploaddocuments.controllers.SessionController.keepAlive(continueUrl: Option[String] ?= None)

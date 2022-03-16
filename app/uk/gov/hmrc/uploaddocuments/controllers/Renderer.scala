@@ -47,7 +47,7 @@ class Renderer @Inject() (
 
   import uk.gov.hmrc.play.fsm.OptionalFormOps._
 
-  final def show(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
+  final def display(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
     request: Request[_],
     m: Messages
   ): Result = {
@@ -89,7 +89,7 @@ class Renderer @Inject() (
             markFileRejected = controller.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
-                controller.continueWithYesNo
+                router.continueWithYesNo
               else router.continueToHost,
             backLink = Call("GET", context.config.backlinkUrl),
             context.config.features.showYesNoQuestionBeforeContinue,

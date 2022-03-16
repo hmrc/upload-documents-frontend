@@ -118,13 +118,6 @@ class FileUploadJourneyController @Inject() (
   //                    ACTIONS                    //
   // --------------------------------------------- //
 
-  // POST /continue-to-host
-  final val continueWithYesNo: Action[AnyContent] =
-    whenAuthenticated
-      .bindForm[Boolean](YesNoChoiceForm)
-      .apply(Transitions.continueWithYesNo)
-      .andCleanBreadcrumbs()
-
   // GET /choose-files
   final val showChooseMultipleFiles: Action[AnyContent] =
     whenAuthenticated
@@ -324,7 +317,7 @@ class FileUploadJourneyController @Inject() (
             markFileRejected = controller.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
-                controller.continueWithYesNo
+                routes.ContinueToHostController.continueWithYesNo
               else routes.ContinueToHostController.continueToHost,
             backLink = Call("GET", context.config.backlinkUrl),
             context.config.features.showYesNoQuestionBeforeContinue,

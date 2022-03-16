@@ -16,18 +16,22 @@
 
 package uk.gov.hmrc.uploaddocuments.controllers
 
+import play.api.mvc.Results._
 import play.api.mvc._
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
+import play.api.data.Form
 
 @Singleton
 class Router @Inject() (appConfig: AppConfig) {
 
   final val controller = routes.FileUploadJourneyController
 
+  final val start = routes.StartController.start
   final val continueToHost = routes.ContinueToHostController.continueToHost
+  final val continueWithYesNo = routes.ContinueToHostController.continueWithYesNo
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
@@ -35,6 +39,21 @@ class Router @Inject() (appConfig: AppConfig) {
 
   final def preferUploadMultipleFiles(implicit rh: RequestHeader): Boolean =
     rh.cookies.get(COOKIE_JSENABLED).isDefined
+
+  final def redirectTo(stateAndBreadcrumbs: (State, List[State])): Result =
+    Redirect(routeTo(stateAndBreadcrumbs._1))
+
+  final def redirectWithForm[A](formWithErrors: Form[A])(stateAndBreadcrumbsOpt: Option[(State, List[State])]): Result =
+    Redirect(
+      stateAndBreadcrumbsOpt
+        .map { case (s, _) => routeTo(s) }
+        .getOrElse(start)
+    )
+      .flashing(Flash {
+        val data = formWithErrors.data
+        // dummy parameter required if empty data
+        if (data.isEmpty) Map("dummy" -> "") else data
+      })
 
   final def routeTo(state: State): Call =
     state match {

@@ -40,18 +40,36 @@ class ContinueToHostController @Inject() (
         whenAuthenticated {
           val sessionStateUpdate =
             FileUploadJourneyModel.Transitions.continueToHost
-
           sessionStateService
             .getOrApply[State.ContinueToHost](sessionStateUpdate)
             .map {
-              case (modifiedState: State.ContinueToHost, breadcrumbs) =>
-                renderer.show(modifiedState, breadcrumbs, None)
+              case (continueToHost: State.ContinueToHost, breadcrumbs) =>
+                renderer.display(continueToHost, breadcrumbs, None)
 
-              case (modifiedState, _) =>
-                val call = router.routeTo(modifiedState)
-                Redirect(call)
+              case other =>
+                router.redirectTo(other)
             }
             .andThen { case _ => sessionStateService.cleanBreadcrumbs() }
+        }
+      }
+    }
+
+  // POST /continue-to-host
+  final val continueWithYesNo: Action[AnyContent] =
+    Action.async { implicit request =>
+      whenActiveSession {
+        whenAuthenticated {
+          FileUploadJourneyController.YesNoChoiceForm.bindFromRequest
+            .fold(
+              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              choice => {
+                val sessionStateUpdate =
+                  FileUploadJourneyModel.Transitions.continueWithYesNo(choice)
+                sessionStateService
+                  .apply(sessionStateUpdate)
+                  .map(router.redirectTo)
+              }
+            )
         }
       }
     }

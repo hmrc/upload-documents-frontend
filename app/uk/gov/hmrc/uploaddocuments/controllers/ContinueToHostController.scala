@@ -14,35 +14,45 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.uploaddocuments.controllers.internal
+package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents}
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class WipeOutController @Inject() (
+class ContinueToHostController @Inject() (
   sessionStateService: SessionStateService,
+  router: Router,
+  renderer: Renderer,
   components: BaseControllerComponents
 )(implicit ec: ExecutionContext)
     extends BaseController(components) {
 
-  // POST /internal/wipe-out
-  final val wipeOut: Action[AnyContent] =
+  // GET /continue-to-host
+  final val continueToHost: Action[AnyContent] =
     Action.async { implicit request =>
       whenActiveSession {
-        whenAuthenticatedInBackchannel {
-          val sessionStateUpdate = FileUploadJourneyModel.Transitions.wipeOut
+        whenAuthenticated {
+          val sessionStateUpdate =
+            FileUploadJourneyModel.Transitions.continueToHost
+
           sessionStateService
-            .apply(sessionStateUpdate)
-            .map(_ => NoContent)
+            .getOrApply[State.ContinueToHost](sessionStateUpdate)
+            .map {
+              case (modifiedState: State.ContinueToHost, breadcrumbs) =>
+                renderer.show(modifiedState, breadcrumbs, None)
+
+              case (modifiedState, _) =>
+                val call = router.routeTo(modifiedState)
+                Redirect(call)
+            }
             .andThen { case _ => sessionStateService.cleanBreadcrumbs() }
         }
       }
     }
-
 }

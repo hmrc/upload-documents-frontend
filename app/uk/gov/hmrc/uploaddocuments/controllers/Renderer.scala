@@ -33,7 +33,7 @@ import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 
-/** Component responsible for translating current session state into the action result. */
+/** Component responsible for translating given session state into the action result. */
 @Singleton
 class Renderer @Inject() (
   views: uk.gov.hmrc.uploaddocuments.views.FileUploadViews,
@@ -47,10 +47,10 @@ class Renderer @Inject() (
 
   import uk.gov.hmrc.play.fsm.OptionalFormOps._
 
-  final def resultOf(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
+  final def show(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
     request: Request[_],
     m: Messages
-  ): Result =
+  ): Result = {
     state match {
       case State.Uninitialized =>
         Redirect(appConfig.govukStartUrl)
@@ -90,7 +90,7 @@ class Renderer @Inject() (
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
                 controller.continueWithYesNo
-              else controller.continueToHost,
+              else router.continueToHost,
             backLink = Call("GET", context.config.backlinkUrl),
             context.config.features.showYesNoQuestionBeforeContinue,
             context.config.content.yesNoQuestionText,
@@ -147,7 +147,7 @@ class Renderer @Inject() (
             views.summaryNoChoiceView(
               context.config.maximumNumberOfFiles,
               fileUploads,
-              controller.continueToHost,
+              router.continueToHost,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
@@ -156,6 +156,7 @@ class Renderer @Inject() (
 
       case _ => NotImplemented
     }
+  }
 
   final def renderUploadRequestJson(
     uploadId: String

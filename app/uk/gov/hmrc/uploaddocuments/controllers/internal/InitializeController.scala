@@ -18,7 +18,6 @@ package uk.gov.hmrc.uploaddocuments.controllers.internal
 
 import com.fasterxml.jackson.core.JsonParseException
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents, Renderer}
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
 import uk.gov.hmrc.uploaddocuments.models._
@@ -38,9 +37,8 @@ class InitializeController @Inject() (
   // POST /internal/initialize
   final val initialize: Action[AnyContent] =
     Action.async { implicit request =>
-      whenJourneyIdKnown {
-        val hc = HeaderCarrierConverter.fromRequest(request) // required to process Session-ID from the cookie
-        whenAuthorisedWithoutEnrolmentReturningForbidden { _ =>
+      whenActiveSession {
+        whenAuthenticatedInBackchannel {
           Future(request.body.asJson.flatMap(_.asOpt[FileUploadInitializationRequest]))
             .flatMap {
               case Some(payload) =>
@@ -56,7 +54,7 @@ class InitializeController @Inject() (
               case e: JsonParseException => BadRequest(e.getMessage())
               case e                     => InternalServerError
             }
-        }(hc, ec)
+        }
       }
     }
 

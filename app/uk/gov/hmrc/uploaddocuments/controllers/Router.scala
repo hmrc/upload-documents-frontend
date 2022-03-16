@@ -27,6 +27,8 @@ class Router @Inject() (appConfig: AppConfig) {
 
   final val controller = routes.FileUploadJourneyController
 
+  final val continueToHost = routes.ContinueToHostController.continueToHost
+
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
   final val COOKIE_JSENABLED = "jsenabled"
@@ -44,7 +46,7 @@ class Router @Inject() (appConfig: AppConfig) {
         )
 
       case State.ContinueToHost(context, fileUploads) =>
-        controller.continueToHost
+        continueToHost
 
       case _: State.UploadMultipleFiles =>
         controller.showChooseMultipleFiles

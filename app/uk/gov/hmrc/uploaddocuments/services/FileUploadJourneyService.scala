@@ -26,6 +26,8 @@ import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
 
@@ -50,6 +52,18 @@ trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[
     else if (currentBreadcrumbs.nonEmpty && currentBreadcrumbs.head.getClass() == newState.getClass())
       currentBreadcrumbs.tail
     else currentState :: breadcrumbsRetentionStrategy(currentBreadcrumbs)
+
+  /** Return the current state if matches expected type or apply the transition. */
+  final def getOrApply[S <: model.State: ClassTag](
+    transition: model.Transition
+  )(implicit rc: RequestContext, ec: ExecutionContext): Future[(model.State, List[model.State])] =
+    currentState.flatMap {
+      case Some(sb @ (state, breadcrumbs)) if is[S](state) => Future.successful(sb)
+      case _                                               => apply(transition)
+    }
+
+  private def is[S <: model.State: ClassTag](state: model.State): Boolean =
+    implicitly[ClassTag[S]].runtimeClass.isAssignableFrom(state.getClass)
 }
 
 trait SessionStateService extends FileUploadJourneyService[HeaderCarrier]

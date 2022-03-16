@@ -1,6 +1,5 @@
-package uk.gov.hmrc.uploaddocuments.controllers.internal
+package uk.gov.hmrc.uploaddocuments.controllers
 
-import uk.gov.hmrc.uploaddocuments.controllers.ControllerISpecBase
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.stubs.UpscanInitiateStubs

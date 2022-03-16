@@ -118,13 +118,6 @@ class FileUploadJourneyController @Inject() (
   //                    ACTIONS                    //
   // --------------------------------------------- //
 
-  // GET /continue-to-host
-  final val continueToHost: Action[AnyContent] =
-    whenAuthenticated
-      .show[State.ContinueToHost]
-      .orApply(Transitions.continueToHost)
-      .andCleanBreadcrumbs()
-
   // POST /continue-to-host
   final val continueWithYesNo: Action[AnyContent] =
     whenAuthenticated
@@ -265,7 +258,7 @@ class FileUploadJourneyController @Inject() (
         )
 
       case State.ContinueToHost(context, fileUploads) =>
-        controller.continueToHost
+        routes.ContinueToHostController.continueToHost
 
       case _: State.UploadMultipleFiles =>
         controller.showChooseMultipleFiles
@@ -332,7 +325,7 @@ class FileUploadJourneyController @Inject() (
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
                 controller.continueWithYesNo
-              else controller.continueToHost,
+              else routes.ContinueToHostController.continueToHost,
             backLink = Call("GET", context.config.backlinkUrl),
             context.config.features.showYesNoQuestionBeforeContinue,
             context.config.content.yesNoQuestionText,
@@ -389,7 +382,7 @@ class FileUploadJourneyController @Inject() (
             views.summaryNoChoiceView(
               context.config.maximumNumberOfFiles,
               fileUploads,
-              controller.continueToHost,
+              routes.ContinueToHostController.continueToHost,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)

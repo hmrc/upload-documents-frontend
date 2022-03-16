@@ -129,15 +129,6 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // GET /choose-file
-  final val showChooseFile: Action[AnyContent] =
-    whenAuthenticated
-      .applyWithRequest { implicit request =>
-        Transitions
-          .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_, _))
-      }
-      .redirectOrDisplayIf[State.UploadSingleFile]
-
   // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
     whenAuthenticated
@@ -251,7 +242,7 @@ class FileUploadJourneyController @Inject() (
         routes.ChooseMultipleFilesController.showChooseMultipleFiles
 
       case _: State.UploadSingleFile =>
-        controller.showChooseFile
+        routes.ChooseSingleFileController.showChooseFile
 
       case _: State.WaitingForFileVerification =>
         controller.showWaitingForFileVerification
@@ -260,7 +251,7 @@ class FileUploadJourneyController @Inject() (
         controller.showSummary
 
       case _: State.SwitchToUploadSingleFile =>
-        controller.showChooseFile
+        routes.ChooseSingleFileController.showChooseFile
 
       case _ =>
         Call("GET", appConfig.govukStartUrl)
@@ -281,7 +272,7 @@ class FileUploadJourneyController @Inject() (
         if (preferUploadMultipleFiles)
           Redirect(routes.ChooseMultipleFilesController.showChooseMultipleFiles)
         else
-          Redirect(controller.showChooseFile)
+          Redirect(routes.ChooseSingleFileController.showChooseFile)
 
       case State.ContinueToHost(context, fileUploads) =>
         if (fileUploads.acceptedCount == 0)
@@ -335,7 +326,7 @@ class FileUploadJourneyController @Inject() (
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,
             successAction = controller.showSummary,
-            failureAction = controller.showChooseFile,
+            failureAction = routes.ChooseSingleFileController.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
@@ -346,7 +337,7 @@ class FileUploadJourneyController @Inject() (
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showSummary,
-            failureAction = controller.showChooseFile,
+            failureAction = routes.ChooseSingleFileController.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )

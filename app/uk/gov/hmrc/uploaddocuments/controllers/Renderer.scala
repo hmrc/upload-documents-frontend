@@ -59,7 +59,7 @@ class Renderer @Inject() (
         if (router.preferUploadMultipleFiles)
           Redirect(router.showChooseMultipleFiles)
         else
-          Redirect(controller.showChooseFile)
+          Redirect(router.showChooseSingleFile)
 
       case State.ContinueToHost(context, fileUploads) =>
         if (fileUploads.acceptedCount == 0)
@@ -113,7 +113,7 @@ class Renderer @Inject() (
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,
             successAction = controller.showSummary,
-            failureAction = controller.showChooseFile,
+            failureAction = router.showChooseSingleFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
           )
@@ -124,7 +124,7 @@ class Renderer @Inject() (
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showSummary,
-            failureAction = controller.showChooseFile,
+            failureAction = router.showChooseSingleFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
           )
@@ -212,7 +212,7 @@ class Renderer @Inject() (
           HeaderNames.LOCATION ->
             (
               if (!context.config.features.showUploadMultiple)
-                routes.FileUploadJourneyController.showChooseFile
+                router.showChooseSingleFile
               else
                 routes.StartController.start
             ).url

@@ -33,6 +33,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val continueToHost = routes.ContinueToHostController.continueToHost
   final val continueWithYesNo = routes.ContinueToHostController.continueWithYesNo
   final val showChooseMultipleFiles = routes.ChooseMultipleFilesController.showChooseMultipleFiles
+  final val showChooseSingleFile = routes.ChooseSingleFileController.showChooseFile
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
@@ -72,7 +73,7 @@ class Router @Inject() (appConfig: AppConfig) {
         showChooseMultipleFiles
 
       case _: State.UploadSingleFile =>
-        controller.showChooseFile
+        showChooseSingleFile
 
       case _: State.WaitingForFileVerification =>
         controller.showWaitingForFileVerification
@@ -81,10 +82,29 @@ class Router @Inject() (appConfig: AppConfig) {
         controller.showSummary
 
       case _: State.SwitchToUploadSingleFile =>
-        controller.showChooseFile
+        showChooseSingleFile
 
       case _ =>
         Call("GET", appConfig.govukStartUrl)
     }
+
+  final def callbackFromUpscan(journeyId: String, nonce: String) =
+    appConfig.baseInternalCallbackUrl +
+      internal.routes.CallbackFromUpscanController.callbackFromUpscan(journeyId, nonce).url
+
+  final def successRedirect(journeyId: String)(implicit rh: RequestHeader): String =
+    appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
+      case Some(_) => controller.asyncWaitingForFileVerification(journeyId)
+      case None    => controller.showWaitingForFileVerification
+    })
+
+  final def successRedirectWhenUploadingMultipleFiles(journeyId: String): String =
+    appConfig.baseExternalCallbackUrl + controller.asyncMarkFileUploadAsPosted(journeyId)
+
+  final def errorRedirect(journeyId: String)(implicit rh: RequestHeader): String =
+    appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
+      case Some(_) => controller.asyncMarkFileUploadAsRejected(journeyId)
+      case None    => controller.markFileUploadAsRejected
+    })
 
 }

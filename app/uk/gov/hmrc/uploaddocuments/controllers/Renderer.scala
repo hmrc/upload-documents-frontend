@@ -112,7 +112,7 @@ class Renderer @Inject() (
             uploadRequest = uploadRequest,
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,
-            successAction = controller.showSummary,
+            successAction = router.showSummary,
             failureAction = router.showChooseSingleFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
@@ -123,7 +123,7 @@ class Renderer @Inject() (
         import context._
         Ok(
           views.waitingForFileVerificationView(
-            successAction = controller.showSummary,
+            successAction = router.showSummary,
             failureAction = router.showChooseSingleFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)

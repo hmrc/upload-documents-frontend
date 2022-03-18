@@ -179,12 +179,6 @@ class FileUploadJourneyController @Inject() (
       .apply(Transitions.markUploadAsPosted)
       .displayUsing(acknowledgeFileUploadRedirect)
 
-  // GET /summary
-  final val showSummary: Action[AnyContent] =
-    whenAuthenticated
-      .show[State.Summary]
-      .orApply(Transitions.backToSummary)
-
   // POST /summary
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthenticated
@@ -248,7 +242,7 @@ class FileUploadJourneyController @Inject() (
         controller.showWaitingForFileVerification
 
       case _: State.Summary =>
-        controller.showSummary
+        routes.SummaryController.showSummary
 
       case _: State.SwitchToUploadSingleFile =>
         routes.ChooseSingleFileController.showChooseFile
@@ -325,7 +319,7 @@ class FileUploadJourneyController @Inject() (
             uploadRequest = uploadRequest,
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,
-            successAction = controller.showSummary,
+            successAction = routes.SummaryController.showSummary,
             failureAction = routes.ChooseSingleFileController.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
@@ -336,7 +330,7 @@ class FileUploadJourneyController @Inject() (
         import context._
         Ok(
           views.waitingForFileVerificationView(
-            successAction = controller.showSummary,
+            successAction = routes.SummaryController.showSummary,
             failureAction = routes.ChooseSingleFileController.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)

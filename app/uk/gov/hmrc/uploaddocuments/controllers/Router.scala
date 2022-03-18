@@ -34,6 +34,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val continueWithYesNo = routes.ContinueToHostController.continueWithYesNo
   final val showChooseMultipleFiles = routes.ChooseMultipleFilesController.showChooseMultipleFiles
   final val showChooseSingleFile = routes.ChooseSingleFileController.showChooseFile
+  final val showSummary = routes.SummaryController.showSummary
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
@@ -66,26 +67,13 @@ class Router @Inject() (appConfig: AppConfig) {
             .getOrElse(context.config.backlinkUrl)
         )
 
-      case State.ContinueToHost(context, fileUploads) =>
-        continueToHost
-
-      case _: State.UploadMultipleFiles =>
-        showChooseMultipleFiles
-
-      case _: State.UploadSingleFile =>
-        showChooseSingleFile
-
-      case _: State.WaitingForFileVerification =>
-        controller.showWaitingForFileVerification
-
-      case _: State.Summary =>
-        controller.showSummary
-
-      case _: State.SwitchToUploadSingleFile =>
-        showChooseSingleFile
-
-      case _ =>
-        Call("GET", appConfig.govukStartUrl)
+      case State.ContinueToHost(context, fileUploads) => continueToHost
+      case _: State.UploadMultipleFiles               => showChooseMultipleFiles
+      case _: State.UploadSingleFile                  => showChooseSingleFile
+      case _: State.WaitingForFileVerification        => controller.showWaitingForFileVerification
+      case _: State.Summary                           => showSummary
+      case _: State.SwitchToUploadSingleFile          => showChooseSingleFile
+      case _                                          => Call("GET", appConfig.govukStartUrl)
     }
 
   final def callbackFromUpscan(journeyId: String, nonce: String) =

@@ -23,7 +23,7 @@ GET        /journey/:journeyId/file-verification                    @uk.gov.hmrc
 GET        /file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
 GET        /file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
 
-GET        /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showSummary
+GET        /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.SummaryController.showSummary
 POST       /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
 GET        /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
 + nocsrf

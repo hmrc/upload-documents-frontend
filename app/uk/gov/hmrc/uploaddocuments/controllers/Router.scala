@@ -36,6 +36,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val showChooseSingleFile = routes.ChooseSingleFileController.showChooseFile
   final val showSummary = routes.SummaryController.showSummary
   final val submitUploadAnotherFileChoice = routes.SummaryController.submitUploadAnotherFileChoice
+  final val showWaitingForFileVerification = routes.FileVerificationController.showWaitingForFileVerification
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
@@ -71,7 +72,7 @@ class Router @Inject() (appConfig: AppConfig) {
       case State.ContinueToHost(context, fileUploads) => continueToHost
       case _: State.UploadMultipleFiles               => showChooseMultipleFiles
       case _: State.UploadSingleFile                  => showChooseSingleFile
-      case _: State.WaitingForFileVerification        => controller.showWaitingForFileVerification
+      case _: State.WaitingForFileVerification        => showWaitingForFileVerification
       case _: State.Summary                           => showSummary
       case _: State.SwitchToUploadSingleFile          => showChooseSingleFile
       case _                                          => Call("GET", appConfig.govukStartUrl)
@@ -84,7 +85,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final def successRedirect(journeyId: String)(implicit rh: RequestHeader): String =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
       case Some(_) => controller.asyncWaitingForFileVerification(journeyId)
-      case None    => controller.showWaitingForFileVerification
+      case None    => showWaitingForFileVerification
     })
 
   final def successRedirectWhenUploadingMultipleFiles(journeyId: String): String =

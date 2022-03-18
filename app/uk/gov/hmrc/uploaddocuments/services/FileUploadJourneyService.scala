@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.uploaddocuments.services
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Scheduler}
+import akka.pattern.FutureTimeoutSupport
 import com.typesafe.config.Config
 import play.api.libs.json.Format
 import uk.gov.hmrc.http.HeaderCarrier
@@ -26,6 +27,7 @@ import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
@@ -62,6 +64,22 @@ trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[
       case _                                               => apply(transition)
     }
 
+  /** Wait for state until timeout. */
+  final def waitFor[S <: model.State: ClassTag](intervalInMiliseconds: Long, timeoutNanoTime: Long)(
+    ifTimeout: => Future[(model.State, List[model.State])]
+  )(implicit rc: RequestContext, scheduler: Scheduler, ec: ExecutionContext): Future[(model.State, List[model.State])] =
+    currentState.flatMap {
+      case Some(sb @ (state: model.State, _)) if is[S](state) =>
+        Future.successful(sb)
+      case _ =>
+        if (System.nanoTime() > timeoutNanoTime) {
+          ifTimeout
+        } else
+          ScheduleAfter(intervalInMiliseconds) {
+            waitFor[S](intervalInMiliseconds * 2, timeoutNanoTime)(ifTimeout)
+          }
+    }
+
   private def is[S <: model.State: ClassTag](state: model.State): Boolean =
     implicitly[ClassTag[S]].runtimeClass.isAssignableFrom(state.getClass)
 }
@@ -88,4 +106,13 @@ case class MongoDBCachedFileUploadJourneyService @Inject() (
     hc => KeyProvider(baseKeyProvider, None)
 
   override val traceFSM: Boolean = appConfig.traceFSM
+}
+
+object ScheduleAfter extends FutureTimeoutSupport {
+
+  /** Delay execution of the future by given miliseconds */
+  def apply[T](
+    delayInMiliseconds: Long
+  )(body: => Future[T])(implicit scheduler: Scheduler, ec: ExecutionContext): Future[T] =
+    after(duration = FiniteDuration(delayInMiliseconds, "ms"), using = scheduler)(body)
 }

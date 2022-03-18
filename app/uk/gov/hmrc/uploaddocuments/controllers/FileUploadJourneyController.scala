@@ -75,7 +75,7 @@ class FileUploadJourneyController @Inject() (
   final def successRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
       case Some(_) => controller.asyncWaitingForFileVerification(journeyId.get)
-      case None    => controller.showWaitingForFileVerification
+      case None    => routes.FileVerificationController.showWaitingForFileVerification
     })
 
   final def successRedirectWhenUploadingMultipleFiles(implicit rh: RequestHeader) =
@@ -148,13 +148,6 @@ class FileUploadJourneyController @Inject() (
       .bindForm(UpscanUploadErrorForm)
       .apply(Transitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
-
-  // GET /file-verification
-  final val showWaitingForFileVerification: Action[AnyContent] =
-    whenAuthenticated
-      .waitForStateThenRedirect[State.Summary](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
-      .orApplyOnTimeout(Transitions.waitForFileVerification)
-      .redirectOrDisplayIf[State.WaitingForFileVerification]
 
   // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
@@ -239,7 +232,7 @@ class FileUploadJourneyController @Inject() (
         routes.ChooseSingleFileController.showChooseFile
 
       case _: State.WaitingForFileVerification =>
-        controller.showWaitingForFileVerification
+        routes.FileVerificationController.showWaitingForFileVerification
 
       case _: State.Summary =>
         routes.SummaryController.showSummary

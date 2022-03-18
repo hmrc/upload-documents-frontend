@@ -345,7 +345,7 @@ class FileUploadJourneyController @Inject() (
               maximumFileSizeBytes = context.config.maximumFileSizeBytes,
               formWithErrors.or(YesNoChoiceForm),
               fileUploads,
-              controller.submitUploadAnotherFileChoice,
+              routes.SummaryController.submitUploadAnotherFileChoice,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               backLinkFor(breadcrumbs)

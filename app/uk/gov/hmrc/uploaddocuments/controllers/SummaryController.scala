@@ -53,4 +53,26 @@ class SummaryController @Inject() (
         }
       }
     }
+
+  // POST /summary
+  final val submitUploadAnotherFileChoice: Action[AnyContent] =
+    Action.async { implicit request =>
+      whenActiveSession {
+        whenAuthenticated {
+          FileUploadJourneyController.YesNoChoiceForm.bindFromRequest
+            .fold(
+              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              choice => {
+                val sessionStateUpdate =
+                  FileUploadJourneyModel.Transitions.submitedUploadAnotherFileChoice(upscanRequest(currentJourneyId))(
+                    upscanInitiateConnector.initiate(_, _)
+                  )(FileUploadJourneyModel.Transitions.continueToHost)(choice)
+                sessionStateService
+                  .apply(sessionStateUpdate)
+                  .map(router.redirectTo)
+              }
+            )
+        }
+      }
+    }
 }

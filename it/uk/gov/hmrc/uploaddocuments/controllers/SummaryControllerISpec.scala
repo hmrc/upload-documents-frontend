@@ -104,10 +104,7 @@ class SummaryControllerISpec extends ControllerISpecBase with UpscanInitiateStub
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
-        val result = await(
-          request("/summary")
-            .post(Map("choice" -> "yes"))
-        )
+        val result = await(request("/summary").post(Map("choice" -> "yes")))
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
@@ -151,10 +148,7 @@ class SummaryControllerISpec extends ControllerISpecBase with UpscanInitiateStub
           appConfig.baseInternalCallbackUrl + s"/internal/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
-        val result = await(
-          request("/summary")
-            .post(Map("choice" -> "yes"))
-        )
+        val result = await(request("/summary").post(Map("choice" -> "yes")))
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
@@ -196,10 +190,7 @@ class SummaryControllerISpec extends ControllerISpecBase with UpscanInitiateStub
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
-        val result = await(
-          request("/summary")
-            .post(Map("choice" -> "yes"))
-        )
+        val result = await(request("/summary").post(Map("choice" -> "yes")))
 
         sessionStateService.getState shouldBe State.ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),
@@ -221,10 +212,7 @@ class SummaryControllerISpec extends ControllerISpecBase with UpscanInitiateStub
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
-        val result = await(
-          request("/summary")
-            .post(Map("choice" -> "no"))
-        )
+        val result = await(request("/summary").post(Map("choice" -> "no")))
 
         sessionStateService.getState shouldBe State.ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),
@@ -245,10 +233,7 @@ class SummaryControllerISpec extends ControllerISpecBase with UpscanInitiateStub
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val expected = givenSomePage(200, "/continue-url")
 
-        val result = await(
-          request("/summary")
-            .post(Map("choice" -> "no"))
-        )
+        val result = await(request("/summary").post(Map("choice" -> "no")))
 
         sessionStateService.getState shouldBe State.ContinueToHost(
           FileUploadContext(fileUploadSessionConfig),

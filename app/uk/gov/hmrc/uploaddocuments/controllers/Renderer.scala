@@ -138,7 +138,7 @@ class Renderer @Inject() (
               maximumFileSizeBytes = context.config.maximumFileSizeBytes,
               formWithErrors.or(YesNoChoiceForm),
               fileUploads,
-              controller.submitUploadAnotherFileChoice,
+              router.submitUploadAnotherFileChoice,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               backlink(breadcrumbs)

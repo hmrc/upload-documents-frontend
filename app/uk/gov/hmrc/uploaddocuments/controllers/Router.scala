@@ -35,6 +35,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val showChooseMultipleFiles = routes.ChooseMultipleFilesController.showChooseMultipleFiles
   final val showChooseSingleFile = routes.ChooseSingleFileController.showChooseFile
   final val showSummary = routes.SummaryController.showSummary
+  final val submitUploadAnotherFileChoice = routes.SummaryController.submitUploadAnotherFileChoice
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */

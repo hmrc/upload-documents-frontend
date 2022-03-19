@@ -38,9 +38,9 @@ import scala.concurrent.Future
 class Renderer @Inject() (
   views: uk.gov.hmrc.uploaddocuments.views.FileUploadViews,
   uploadFileViewHelper: UploadFileViewHelper,
+  router: Router,
   appConfig: AppConfig,
-  val actorSystem: ActorSystem,
-  router: Router
+  val actorSystem: ActorSystem
 ) extends FileStream {
 
   final val controller = routes.FileUploadJourneyController
@@ -83,7 +83,7 @@ class Renderer @Inject() (
             context.config.newFileDescription,
             initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
-            checkFileVerificationStatus = controller.checkFileVerificationStatus,
+            checkFileVerificationStatus = router.checkFileVerificationStatus,
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
@@ -114,7 +114,7 @@ class Renderer @Inject() (
             maybeUploadError = maybeUploadError,
             successAction = router.showSummary,
             failureAction = router.showChooseSingleFile,
-            checkStatusAction = controller.checkFileVerificationStatus(reference),
+            checkStatusAction = router.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
           )
         )
@@ -125,7 +125,7 @@ class Renderer @Inject() (
           views.waitingForFileVerificationView(
             successAction = router.showSummary,
             failureAction = router.showChooseSingleFile,
-            checkStatusAction = controller.checkFileVerificationStatus(reference),
+            checkStatusAction = router.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
           )
         )

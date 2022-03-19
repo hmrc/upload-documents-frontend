@@ -37,6 +37,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val showSummary = routes.SummaryController.showSummary
   final val submitUploadAnotherFileChoice = routes.SummaryController.submitUploadAnotherFileChoice
   final val showWaitingForFileVerification = routes.FileVerificationController.showWaitingForFileVerification
+  final val checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus _
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */

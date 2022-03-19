@@ -25,6 +25,7 @@ import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import akka.actor.ActorSystem
+import play.api.i18n.Messages
 
 @Singleton
 class FileVerificationController @Inject() (
@@ -63,6 +64,23 @@ class FileVerificationController @Inject() (
               case other =>
                 router.redirectTo(other)
             }
+        }
+      }
+    }
+
+  // GET /file-verification/:reference/status
+  final def checkFileVerificationStatus(reference: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      whenActiveSession {
+        whenAuthenticated {
+          sessionStateService.currentState.map {
+            case Some(sab) =>
+              val messages = implicitly[Messages]
+              renderer.renderFileVerificationStatus(reference)(messages)(sab)
+
+            case None =>
+              NotFound
+          }
         }
       }
     }

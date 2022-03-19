@@ -206,11 +206,6 @@ class FileUploadJourneyController @Inject() (
     whenAuthenticated.showCurrentState
       .displayAsyncUsing(streamFileFromUspcan(reference))
 
-  // GET /file-verification/:reference/status
-  final def checkFileVerificationStatus(reference: String): Action[AnyContent] =
-    whenAuthenticated.showCurrentState
-      .displayUsing(renderFileVerificationStatus(reference))
-
   /** Function from the `State` to the `Call` (route), used by play-fsm internally to create redirects.
     */
   final override def getCallFor(state: State)(implicit request: Request[_]): Call =
@@ -283,7 +278,7 @@ class FileUploadJourneyController @Inject() (
             context.config.newFileDescription,
             initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
-            checkFileVerificationStatus = controller.checkFileVerificationStatus,
+            checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus,
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
@@ -314,7 +309,7 @@ class FileUploadJourneyController @Inject() (
             maybeUploadError = maybeUploadError,
             successAction = routes.SummaryController.showSummary,
             failureAction = routes.ChooseSingleFileController.showChooseFile,
-            checkStatusAction = controller.checkFileVerificationStatus(reference),
+            checkStatusAction = routes.FileVerificationController.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
         )
@@ -325,7 +320,7 @@ class FileUploadJourneyController @Inject() (
           views.waitingForFileVerificationView(
             successAction = routes.SummaryController.showSummary,
             failureAction = routes.ChooseSingleFileController.showChooseFile,
-            checkStatusAction = controller.checkFileVerificationStatus(reference),
+            checkStatusAction = routes.FileVerificationController.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
         )
@@ -377,33 +372,6 @@ class FileUploadJourneyController @Inject() (
         }
 
       case _ => Forbidden
-    }
-
-  private def renderFileVerificationStatus(
-    reference: String
-  ) =
-    Renderer.withRequest { implicit request =>
-      {
-        case s: FileUploadState =>
-          s.fileUploads.files.find(_.reference == reference) match {
-            case Some(file) =>
-              Ok(
-                Json.toJson(
-                  FileVerificationStatus(
-                    file,
-                    uploadFileViewHelper,
-                    controller.previewFileUploadByReference(_, _),
-                    s.context.config.maximumFileSizeBytes.toInt,
-                    s.context.config.content.allowedFilesTypesHint
-                      .orElse(s.context.config.allowedFileExtensions)
-                      .getOrElse(s.context.config.allowedContentTypes)
-                  )
-                )
-              )
-            case None => NotFound
-          }
-        case _ => NotFound
-      }
     }
 
   private def renderFileRemovalStatus =

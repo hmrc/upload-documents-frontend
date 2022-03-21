@@ -15,7 +15,7 @@ GET        /file-rejected                                           @uk.gov.hmrc
 POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileRejectedController.markFileUploadAsRejectedAsync
 
 GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FilePostedController.asyncMarkFileUploadAsPosted(journeyId: String)
-OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
+OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FilePostedController.preflightUpload(journeyId: String)
 GET        /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsRejected(journeyId: String)
 OPTIONS    /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
 GET        /journey/:journeyId/file-verification                    @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncWaitingForFileVerification(journeyId: String)

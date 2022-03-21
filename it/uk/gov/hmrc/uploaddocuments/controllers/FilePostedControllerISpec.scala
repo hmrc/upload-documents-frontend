@@ -49,5 +49,18 @@ class FilePostedControllerISpec extends ControllerISpecBase {
         )
       }
     }
+
+    "OPTIONS /journey/:journeyId/file-posted" should {
+      "return 201 with access control header" in {
+        val result =
+          await(
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-posted")
+              .options()
+          )
+        result.status shouldBe 201
+        result.body.isEmpty shouldBe true
+        result.headerValues(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN) shouldBe Seq("*")
+      }
+    }
   }
 }

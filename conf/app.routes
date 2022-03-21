@@ -14,7 +14,7 @@ GET        /file-rejected                                           @uk.gov.hmrc
 + nocsrf
 POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileRejectedController.markFileUploadAsRejectedAsync
 
-GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsPosted(journeyId: String)
+GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FilePostedController.asyncMarkFileUploadAsPosted(journeyId: String)
 OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
 GET        /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsRejected(journeyId: String)
 OPTIONS    /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)

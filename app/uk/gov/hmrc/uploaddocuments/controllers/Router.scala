@@ -40,6 +40,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus _
   final val markFileUploadAsRejected = routes.FileRejectedController.markFileUploadAsRejected
   final val markFileUploadAsRejectedAsync = routes.FileRejectedController.markFileUploadAsRejectedAsync
+  final val asyncMarkFileUploadAsPosted = routes.FilePostedController.asyncMarkFileUploadAsPosted _
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
@@ -92,7 +93,7 @@ class Router @Inject() (appConfig: AppConfig) {
     })
 
   final def successRedirectWhenUploadingMultipleFiles(journeyId: String): String =
-    appConfig.baseExternalCallbackUrl + controller.asyncMarkFileUploadAsPosted(journeyId)
+    appConfig.baseExternalCallbackUrl + asyncMarkFileUploadAsPosted(journeyId)
 
   final def errorRedirect(journeyId: String)(implicit rh: RequestHeader): String =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {

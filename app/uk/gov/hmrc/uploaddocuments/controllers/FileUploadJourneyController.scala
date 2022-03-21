@@ -79,7 +79,7 @@ class FileUploadJourneyController @Inject() (
     })
 
   final def successRedirectWhenUploadingMultipleFiles(implicit rh: RequestHeader) =
-    appConfig.baseExternalCallbackUrl + controller.asyncMarkFileUploadAsPosted(journeyId.get)
+    appConfig.baseExternalCallbackUrl + routes.FilePostedController.asyncMarkFileUploadAsPosted(journeyId.get)
 
   final def errorRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
@@ -151,23 +151,6 @@ class FileUploadJourneyController @Inject() (
     Action {
       Created.withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
     }
-
-  // GET /journey/:journeyId/file-posted
-  final def asyncMarkFileUploadAsPosted(journeyId: String): Action[AnyContent] =
-    actions
-      .bindForm(UpscanUploadSuccessForm)
-      .apply(Transitions.markUploadAsPosted)
-      .displayUsing(acknowledgeFileUploadRedirect)
-
-  // POST /summary
-  final val submitUploadAnotherFileChoice: Action[AnyContent] =
-    whenAuthenticated
-      .bindForm[Boolean](YesNoChoiceForm)
-      .applyWithRequest { implicit request =>
-        Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_, _))(
-          Transitions.continueToHost
-        )
-      }
 
   // GET /uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =

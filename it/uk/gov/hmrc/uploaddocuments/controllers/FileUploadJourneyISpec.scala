@@ -2,7 +2,6 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.http.HeaderNames
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import play.api.libs.ws.{DefaultWSCookie, StandaloneWSRequest}
 import play.api.mvc.{AnyContent, Call, Cookie, Request, Session}
@@ -936,19 +935,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("global.error.500.title"))
         result.body should include(htmlEscapedMessage("global.error.500.heading"))
         sessionStateService.getState shouldBe state
-      }
-    }
-
-    "OPTIONS /journey/:journeyId/file-rejected" should {
-      "return 201 with access control header" in {
-        val result =
-          await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-rejected")
-              .options()
-          )
-        result.status shouldBe 201
-        result.body.isEmpty shouldBe true
-        result.headerValues(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN) shouldBe Seq("*")
       }
     }
 

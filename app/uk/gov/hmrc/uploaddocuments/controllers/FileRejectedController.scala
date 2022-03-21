@@ -23,6 +23,7 @@ import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+import play.api.http.HeaderNames
 
 @Singleton
 class FileRejectedController @Inject() (
@@ -72,6 +73,12 @@ class FileRejectedController @Inject() (
             )
         }
       }
+    }
+
+  // OPTIONS /journey/:journeyId/file-rejected
+  final def preflightUpload(journeyId: String): Action[AnyContent] =
+    Action {
+      Created.withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
     }
 
 }

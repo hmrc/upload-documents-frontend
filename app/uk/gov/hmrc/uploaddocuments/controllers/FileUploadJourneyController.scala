@@ -84,7 +84,7 @@ class FileUploadJourneyController @Inject() (
   final def errorRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
       case Some(_) => controller.asyncMarkFileUploadAsRejected(journeyId.get)
-      case None    => controller.markFileUploadAsRejected
+      case None    => routes.FileRejectedController.markFileUploadAsRejected
     })
 
   final def upscanRequest(nonce: String, maximumFileSizeBytes: Long)(implicit
@@ -128,12 +128,6 @@ class FileUploadJourneyController @Inject() (
           )
       }
       .displayUsing(renderUploadRequestJson(uploadId))
-
-  // GET /file-rejected
-  final val markFileUploadAsRejected: Action[AnyContent] =
-    whenAuthenticated
-      .bindForm(UpscanUploadErrorForm)
-      .apply(Transitions.markUploadAsRejected)
 
   // POST /file-rejected
   final val markFileUploadAsRejectedAsync: Action[AnyContent] =

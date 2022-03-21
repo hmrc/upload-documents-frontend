@@ -83,7 +83,7 @@ class FileUploadJourneyController @Inject() (
 
   final def errorRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
-      case Some(_) => controller.asyncMarkFileUploadAsRejected(journeyId.get)
+      case Some(_) => routes.FileRejectedController.asyncMarkFileUploadAsRejected(journeyId.get)
       case None    => routes.FileRejectedController.markFileUploadAsRejected
     })
 
@@ -129,13 +129,6 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // GET /journey/:journeyId/file-rejected
-  final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
-    actions
-      .bindForm(UpscanUploadErrorForm)
-      .apply(Transitions.markUploadAsRejected)
-      .displayUsing(acknowledgeFileUploadRedirect)
-
   // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
     actions
@@ -145,12 +138,6 @@ class FileUploadJourneyController @Inject() (
       )
       .orApplyOnTimeout(Transitions.waitForFileVerification)
       .displayUsing(acknowledgeFileUploadRedirect)
-
-  // OPTIONS
-  final def preflightUpload(journeyId: String): Action[AnyContent] =
-    Action {
-      Created.withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
-    }
 
   // GET /uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =

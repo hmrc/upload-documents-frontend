@@ -75,6 +75,24 @@ class FileRejectedController @Inject() (
       }
     }
 
+  // GET /journey/:journeyId/file-rejected
+  final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      whenActiveSession {
+        FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
+          .fold(
+            formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+            s3UploadError => {
+              val sessionStateUpdate =
+                FileUploadJourneyModel.Transitions.markUploadAsRejected(s3UploadError)
+              sessionStateService
+                .apply(sessionStateUpdate)
+                .map(renderer.acknowledgeFileUploadRedirect)
+            }
+          )
+      }
+    }
+
   // OPTIONS /journey/:journeyId/file-rejected
   final def preflightUpload(journeyId: String): Action[AnyContent] =
     Action {

@@ -34,7 +34,7 @@ class WipeOutController @Inject() (
   // POST /internal/wipe-out
   final val wipeOut: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticatedInBackchannel {
           val sessionStateUpdate = FileUploadJourneyModel.Transitions.wipeOut
           sessionStateService

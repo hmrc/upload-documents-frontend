@@ -36,7 +36,7 @@ class ContinueToHostController @Inject() (
   // GET /continue-to-host
   final val continueToHost: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
             FileUploadJourneyModel.Transitions.continueToHost
@@ -57,7 +57,7 @@ class ContinueToHostController @Inject() (
   // POST /continue-to-host
   final val continueWithYesNo: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           FileUploadJourneyController.YesNoChoiceForm.bindFromRequest
             .fold(

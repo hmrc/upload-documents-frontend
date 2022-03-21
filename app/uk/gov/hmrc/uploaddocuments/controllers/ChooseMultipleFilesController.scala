@@ -36,7 +36,7 @@ class ChooseMultipleFilesController @Inject() (
   // GET /choose-files
   final val showChooseMultipleFiles: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
             FileUploadJourneyModel.Transitions.toUploadMultipleFiles(router.preferUploadMultipleFiles)

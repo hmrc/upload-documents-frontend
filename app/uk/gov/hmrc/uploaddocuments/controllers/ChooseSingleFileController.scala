@@ -38,7 +38,7 @@ class ChooseSingleFileController @Inject() (
   // GET /choose-file
   final val showChooseFile: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
             FileUploadJourneyModel.Transitions

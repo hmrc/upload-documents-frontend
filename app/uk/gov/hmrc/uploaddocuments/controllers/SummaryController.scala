@@ -38,7 +38,7 @@ class SummaryController @Inject() (
   // GET /summary
   final val showSummary: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           val sessionStateUpdate = FileUploadJourneyModel.Transitions.backToSummary
           sessionStateService
@@ -57,7 +57,7 @@ class SummaryController @Inject() (
   // POST /summary
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           FileUploadJourneyController.YesNoChoiceForm.bindFromRequest
             .fold(

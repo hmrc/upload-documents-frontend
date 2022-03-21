@@ -37,7 +37,7 @@ class InitializeController @Inject() (
   // POST /internal/initialize
   final val initialize: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticatedInBackchannel {
           Future(request.body.asJson.flatMap(_.asOpt[FileUploadInitializationRequest]))
             .flatMap {

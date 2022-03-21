@@ -38,7 +38,7 @@ class FileRejectedController @Inject() (
   // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
             .fold(
@@ -58,7 +58,7 @@ class FileRejectedController @Inject() (
   // POST /file-rejected
   final val markFileUploadAsRejectedAsync: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
             .fold(
@@ -78,7 +78,7 @@ class FileRejectedController @Inject() (
   // GET /journey/:journeyId/file-rejected
   final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
           .fold(
             formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),

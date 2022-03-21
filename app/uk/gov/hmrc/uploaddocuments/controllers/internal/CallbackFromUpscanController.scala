@@ -38,7 +38,7 @@ class CallbackFromUpscanController @Inject() (
   // POST /callback-from-upscan/journey/:journeyId/:nonce
   final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         Future(request.body.asJson.flatMap(_.asOpt[UpscanNotification]))
           .flatMap {
             case Some(payload) =>

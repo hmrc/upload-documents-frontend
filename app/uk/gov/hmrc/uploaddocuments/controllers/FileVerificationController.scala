@@ -46,7 +46,7 @@ class FileVerificationController @Inject() (
   // GET /file-verification
   final val showWaitingForFileVerification: Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           val timeoutNanoTime: Long =
             System.nanoTime() + INITIAL_CALLBACK_WAIT_TIME_SECONDS * 1000000000L
@@ -71,7 +71,7 @@ class FileVerificationController @Inject() (
   // GET /file-verification/:reference/status
   final def checkFileVerificationStatus(reference: String): Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         whenAuthenticated {
           sessionStateService.currentState.map {
             case Some(sab) =>
@@ -88,7 +88,7 @@ class FileVerificationController @Inject() (
   // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
     Action.async { implicit request =>
-      whenActiveSession {
+      whenInSession {
         val timeoutNanoTime: Long =
           System.nanoTime() + INITIAL_CALLBACK_WAIT_TIME_SECONDS * 1000000000L
         sessionStateService

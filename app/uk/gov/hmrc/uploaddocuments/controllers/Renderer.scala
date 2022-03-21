@@ -86,7 +86,7 @@ class Renderer @Inject() (
             checkFileVerificationStatus = router.checkFileVerificationStatus,
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
-            markFileRejected = controller.markFileUploadAsRejectedAsync,
+            markFileRejected = router.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
                 router.continueWithYesNo

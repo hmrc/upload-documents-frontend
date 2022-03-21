@@ -12,7 +12,7 @@ POST       /initiate-upscan/:uploadId                               @uk.gov.hmrc
 
 GET        /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileRejectedController.markFileUploadAsRejected
 + nocsrf
-POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejectedAsync
+POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileRejectedController.markFileUploadAsRejectedAsync
 
 GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsPosted(journeyId: String)
 OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)

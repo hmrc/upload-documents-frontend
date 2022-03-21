@@ -129,13 +129,6 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // POST /file-rejected
-  final val markFileUploadAsRejectedAsync: Action[AnyContent] =
-    whenAuthenticated
-      .bindForm(UpscanUploadErrorForm)
-      .apply(Transitions.markUploadAsRejected)
-      .displayUsing(acknowledgeFileUploadRedirect)
-
   // GET /journey/:journeyId/file-rejected
   final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
     actions
@@ -275,7 +268,7 @@ class FileUploadJourneyController @Inject() (
             checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus,
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
-            markFileRejected = controller.markFileUploadAsRejectedAsync,
+            markFileRejected = routes.FileRejectedController.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
                 routes.ContinueToHostController.continueWithYesNo

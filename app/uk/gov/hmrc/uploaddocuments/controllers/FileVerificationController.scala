@@ -85,4 +85,21 @@ class FileVerificationController @Inject() (
       }
     }
 
+  // GET /journey/:journeyId/file-verification
+  final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      whenActiveSession {
+        val timeoutNanoTime: Long =
+          System.nanoTime() + INITIAL_CALLBACK_WAIT_TIME_SECONDS * 1000000000L
+        sessionStateService
+          .waitFor[State.Summary](intervalInMiliseconds, timeoutNanoTime) {
+            val sessionStateUpdate =
+              FileUploadJourneyModel.Transitions.waitForFileVerification
+            sessionStateService
+              .apply(sessionStateUpdate)
+          }
+          .map(renderer.acknowledgeFileUploadRedirect)
+      }
+    }
+
 }

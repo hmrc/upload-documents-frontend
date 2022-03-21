@@ -74,7 +74,7 @@ class FileUploadJourneyController @Inject() (
 
   final def successRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
-      case Some(_) => controller.asyncWaitingForFileVerification(journeyId.get)
+      case Some(_) => routes.FileVerificationController.asyncWaitingForFileVerification(journeyId.get)
       case None    => routes.FileVerificationController.showWaitingForFileVerification
     })
 
@@ -128,16 +128,6 @@ class FileUploadJourneyController @Inject() (
           )
       }
       .displayUsing(renderUploadRequestJson(uploadId))
-
-  // GET /journey/:journeyId/file-verification
-  final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
-    actions
-      .waitForStateAndDisplayUsing[State.Summary](
-        INITIAL_CALLBACK_WAIT_TIME_SECONDS,
-        acknowledgeFileUploadRedirect
-      )
-      .orApplyOnTimeout(Transitions.waitForFileVerification)
-      .displayUsing(acknowledgeFileUploadRedirect)
 
   // GET /uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =
@@ -363,15 +353,6 @@ class FileUploadJourneyController @Inject() (
       case _ => Future.successful(NotFound)
 
     }
-
-  private def acknowledgeFileUploadRedirect = Renderer.simple { case state =>
-    (state match {
-      case _: State.UploadMultipleFiles        => Created
-      case _: State.Summary                    => Created
-      case _: State.WaitingForFileVerification => Accepted
-      case _                                   => NoContent
-    }).withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
-  }
 
 }
 

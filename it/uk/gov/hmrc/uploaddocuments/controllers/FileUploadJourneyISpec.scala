@@ -578,45 +578,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /journey/:journeyId/file-verification" should {
-      "set current file upload status as posted and return 204 NoContent" in {
-        sessionStateService.setState(
-          UploadSingleFile(
-            FileUploadContext(fileUploadSessionConfig),
-            "11370e18-6e24-453e-b45a-76d3e32ea33d",
-            UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
-            FileUploads(files =
-              Seq(
-                FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(Nonce.Any, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-
-        val result1 =
-          await(requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-verification").get())
-
-        result1.status shouldBe 202
-        result1.body.isEmpty shouldBe true
-        sessionStateService.getState shouldBe (
-          WaitingForFileVerification(
-            FileUploadContext(fileUploadSessionConfig),
-            "11370e18-6e24-453e-b45a-76d3e32ea33d",
-            UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
-            FileUpload.Posted(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-            FileUploads(files =
-              Seq(
-                FileUpload.Posted(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(Nonce.Any, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
-              )
-            )
-          )
-        )
-      }
-    }
-
     "GET /uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
         givenResultPushEndpoint(

@@ -129,15 +129,6 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // GET /uploaded/:reference/remove
-  final def removeFileUploadByReference(reference: String): Action[AnyContent] =
-    whenAuthenticated
-      .applyWithRequest { implicit request =>
-        Transitions.removeFileUploadByReference(reference)(upscanRequest)(
-          upscanInitiateConnector.initiate(_, _)
-        )(fileUploadResultPushConnector.push(_))
-      }
-
   // POST /uploaded/:reference/remove
   final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
     whenAuthenticated
@@ -282,7 +273,7 @@ class FileUploadJourneyController @Inject() (
               fileUploads,
               routes.SummaryController.submitUploadAnotherFileChoice,
               controller.previewFileUploadByReference,
-              controller.removeFileUploadByReference,
+              routes.RemoveController.removeFileUploadByReference,
               backLinkFor(breadcrumbs)
             )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
           else
@@ -291,7 +282,7 @@ class FileUploadJourneyController @Inject() (
               fileUploads,
               routes.ContinueToHostController.continueToHost,
               controller.previewFileUploadByReference,
-              controller.removeFileUploadByReference,
+              routes.RemoveController.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
             )(implicitly[Request[_]], context.messages, context.config.content)
         )

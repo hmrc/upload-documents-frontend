@@ -140,7 +140,7 @@ class Renderer @Inject() (
               fileUploads,
               router.submitUploadAnotherFileChoice,
               controller.previewFileUploadByReference,
-              controller.removeFileUploadByReference,
+              router.removeFileUploadByReference,
               backlink(breadcrumbs)
             )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
           else
@@ -149,7 +149,7 @@ class Renderer @Inject() (
               fileUploads,
               router.continueToHost,
               controller.previewFileUploadByReference,
-              controller.removeFileUploadByReference,
+              router.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
             )(implicitly[Request[_]], context.messages, context.config.content)
         )

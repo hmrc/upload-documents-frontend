@@ -50,4 +50,20 @@ class RemoveController @Inject() (
         }
       }
     }
+
+  // POST /uploaded/:reference/remove
+  final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      whenInSession {
+        whenAuthenticated {
+          val sessionStateUpdate =
+            FileUploadJourneyModel.Transitions.removeFileUploadByReference(reference)(upscanRequest(currentJourneyId))(
+              upscanInitiateConnector.initiate(_, _)
+            )(fileUploadResultPushConnector.push(_))
+          sessionStateService
+            .apply(sessionStateUpdate)
+            .map { case _ => NoContent }
+        }
+      }
+    }
 }

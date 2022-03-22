@@ -129,16 +129,6 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // POST /uploaded/:reference/remove
-  final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
-    whenAuthenticated
-      .applyWithRequest { implicit request =>
-        Transitions.removeFileUploadByReference(reference)(upscanRequest)(
-          upscanInitiateConnector.initiate(_, _)
-        )(fileUploadResultPushConnector.push(_))
-      }
-      .displayUsing(renderFileRemovalStatus)
-
   // GET /preview/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
     whenAuthenticated.showCurrentState
@@ -217,7 +207,7 @@ class FileUploadJourneyController @Inject() (
             initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus,
-            removeFile = controller.removeFileUploadByReferenceAsync,
+            removeFile = routes.RemoveController.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = routes.FileRejectedController.markFileUploadAsRejectedAsync,
             continueAction =

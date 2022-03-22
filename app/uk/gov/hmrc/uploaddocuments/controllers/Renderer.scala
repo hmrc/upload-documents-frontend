@@ -84,7 +84,7 @@ class Renderer @Inject() (
             initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = router.checkFileVerificationStatus,
-            removeFile = controller.removeFileUploadByReferenceAsync,
+            removeFile = router.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = router.markFileUploadAsRejectedAsync,
             continueAction =

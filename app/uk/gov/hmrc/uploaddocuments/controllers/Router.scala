@@ -44,6 +44,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val asyncMarkFileUploadAsRejected = routes.FileRejectedController.asyncMarkFileUploadAsRejected _
   final val asyncWaitingForFileVerification = routes.FileVerificationController.asyncWaitingForFileVerification _
   final val removeFileUploadByReference = routes.RemoveController.removeFileUploadByReference _
+  final val removeFileUploadByReferenceAsync = routes.RemoveController.removeFileUploadByReferenceAsync _
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */

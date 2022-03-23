@@ -52,7 +52,6 @@ class FileUploadJourneyController @Inject() (
       configuration
     ) with FileStream {
 
-  final val controller = routes.FileUploadJourneyController
   final val callbackFromUpscanController =
     uk.gov.hmrc.uploaddocuments.controllers.internal.routes.CallbackFromUpscanController
 
@@ -196,7 +195,7 @@ class FileUploadJourneyController @Inject() (
             initiateNextFileUpload = routes.InitiateUpscanController.initiateNextFileUpload,
             checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus,
             removeFile = routes.RemoveController.removeFileUploadByReferenceAsync,
-            previewFile = controller.previewFileUploadByReference,
+            previewFile = routes.PreviewController.previewFileUploadByReference,
             markFileRejected = routes.FileRejectedController.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
@@ -250,7 +249,7 @@ class FileUploadJourneyController @Inject() (
               formWithErrors.or(YesNoChoiceForm),
               fileUploads,
               routes.SummaryController.submitUploadAnotherFileChoice,
-              controller.previewFileUploadByReference,
+              routes.PreviewController.previewFileUploadByReference,
               routes.RemoveController.removeFileUploadByReference,
               backLinkFor(breadcrumbs)
             )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
@@ -259,7 +258,7 @@ class FileUploadJourneyController @Inject() (
               context.config.maximumNumberOfFiles,
               fileUploads,
               routes.ContinueToHostController.continueToHost,
-              controller.previewFileUploadByReference,
+              routes.PreviewController.previewFileUploadByReference,
               routes.RemoveController.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
             )(implicitly[Request[_]], context.messages, context.config.content)

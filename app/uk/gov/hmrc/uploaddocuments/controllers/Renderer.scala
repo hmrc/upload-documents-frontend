@@ -43,8 +43,6 @@ class Renderer @Inject() (
   val actorSystem: ActorSystem
 ) extends FileStream {
 
-  final val controller = routes.FileUploadJourneyController
-
   import uk.gov.hmrc.play.fsm.OptionalFormOps._
 
   final def display(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
@@ -85,7 +83,7 @@ class Renderer @Inject() (
             initiateNextFileUpload = router.initiateNextFileUpload,
             checkFileVerificationStatus = router.checkFileVerificationStatus,
             removeFile = router.removeFileUploadByReferenceAsync,
-            previewFile = controller.previewFileUploadByReference,
+            previewFile = router.previewFileUploadByReference,
             markFileRejected = router.markFileUploadAsRejectedAsync,
             continueAction =
               if (context.config.features.showYesNoQuestionBeforeContinue)
@@ -139,7 +137,7 @@ class Renderer @Inject() (
               formWithErrors.or(YesNoChoiceForm),
               fileUploads,
               router.submitUploadAnotherFileChoice,
-              controller.previewFileUploadByReference,
+              router.previewFileUploadByReference,
               router.removeFileUploadByReference,
               backlink(breadcrumbs)
             )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
@@ -148,7 +146,7 @@ class Renderer @Inject() (
               context.config.maximumNumberOfFiles,
               fileUploads,
               router.continueToHost,
-              controller.previewFileUploadByReference,
+              router.previewFileUploadByReference,
               router.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
             )(implicitly[Request[_]], context.messages, context.config.content)
@@ -192,7 +190,7 @@ class Renderer @Inject() (
                 FileVerificationStatus(
                   file,
                   uploadFileViewHelper,
-                  controller.previewFileUploadByReference(_, _),
+                  router.previewFileUploadByReference(_, _),
                   s.context.config.maximumFileSizeBytes.toInt,
                   s.context.config.content.allowedFilesTypesHint
                     .orElse(s.context.config.allowedFileExtensions)

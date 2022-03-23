@@ -19,7 +19,6 @@ package uk.gov.hmrc.uploaddocuments.journeys
 import play.api.libs.json._
 import uk.gov.hmrc.play.fsm.JsonStateFormats
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
 
 object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
 

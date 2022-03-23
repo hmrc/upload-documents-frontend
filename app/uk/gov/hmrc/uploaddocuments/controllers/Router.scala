@@ -27,8 +27,6 @@ import play.api.data.Form
 @Singleton
 class Router @Inject() (appConfig: AppConfig) {
 
-  final val controller = routes.FileUploadJourneyController
-
   final val start = routes.StartController.start
   final val continueToHost = routes.ContinueToHostController.continueToHost
   final val continueWithYesNo = routes.ContinueToHostController.continueWithYesNo
@@ -46,6 +44,7 @@ class Router @Inject() (appConfig: AppConfig) {
   final val removeFileUploadByReference = routes.RemoveController.removeFileUploadByReference _
   final val removeFileUploadByReferenceAsync = routes.RemoveController.removeFileUploadByReferenceAsync _
   final val initiateNextFileUpload = routes.InitiateUpscanController.initiateNextFileUpload _
+  final val previewFileUploadByReference = routes.PreviewController.previewFileUploadByReference _
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */

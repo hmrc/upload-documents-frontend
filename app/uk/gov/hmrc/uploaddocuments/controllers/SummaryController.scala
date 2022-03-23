@@ -59,7 +59,7 @@ class SummaryController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          FileUploadJourneyController.YesNoChoiceForm.bindFromRequest
+          Forms.YesNoChoiceForm.bindFromRequest
             .fold(
               formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
               choice => {

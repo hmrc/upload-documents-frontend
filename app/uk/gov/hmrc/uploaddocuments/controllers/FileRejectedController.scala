@@ -40,7 +40,7 @@ class FileRejectedController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
+          Forms.UpscanUploadErrorForm.bindFromRequest
             .fold(
               formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
               s3UploadError => {
@@ -60,7 +60,7 @@ class FileRejectedController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
+          Forms.UpscanUploadErrorForm.bindFromRequest
             .fold(
               formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
               s3UploadError => {
@@ -79,7 +79,7 @@ class FileRejectedController @Inject() (
   final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
     Action.async { implicit request =>
       whenInSession {
-        FileUploadJourneyController.UpscanUploadErrorForm.bindFromRequest
+        Forms.UpscanUploadErrorForm.bindFromRequest
           .fold(
             formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
             s3UploadError => {

@@ -39,7 +39,7 @@ class FilePostedController @Inject() (
   final def asyncMarkFileUploadAsPosted(journeyId: String): Action[AnyContent] =
     Action.async { implicit request =>
       whenInSession {
-        FileUploadJourneyController.UpscanUploadSuccessForm.bindFromRequest
+        Forms.UpscanUploadSuccessForm.bindFromRequest
           .fold(
             formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
             s3UploadSuccess => {

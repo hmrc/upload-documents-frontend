@@ -24,7 +24,7 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.uploaddocuments.connectors._
-import uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController._
+import uk.gov.hmrc.uploaddocuments.controllers.Forms._
 import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper

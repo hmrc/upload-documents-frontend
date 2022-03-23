@@ -31,7 +31,19 @@ class StartControllerISpec extends ControllerISpecBase with UpscanInitiateStubs 
 
         sessionStateService.getState shouldBe state
       }
+    }
 
+    "GET /foo" should {
+      "return an error page not found" in {
+        val state = sessionStateService.getState
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+
+        val result = await(request("/foo").get())
+
+        result.status shouldBe 404
+        result.body should include("Page not found")
+        sessionStateService.getState shouldBe state
+      }
     }
 
   }

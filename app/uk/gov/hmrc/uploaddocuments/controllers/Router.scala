@@ -45,10 +45,13 @@ class Router @Inject() (appConfig: AppConfig) {
   final val asyncWaitingForFileVerification = routes.FileVerificationController.asyncWaitingForFileVerification _
   final val removeFileUploadByReference = routes.RemoveController.removeFileUploadByReference _
   final val removeFileUploadByReferenceAsync = routes.RemoveController.removeFileUploadByReferenceAsync _
+  final val initiateNextFileUpload = routes.InitiateUpscanController.initiateNextFileUpload _
 
   /** This cookie is set by the script on each request coming from one of our own pages open in the browser.
     */
   final val COOKIE_JSENABLED = "jsenabled"
+
+  final val baseInternalCallbackUrl: String = appConfig.baseInternalCallbackUrl
 
   final def preferUploadMultipleFiles(implicit rh: RequestHeader): Boolean =
     rh.cookies.get(COOKIE_JSENABLED).isDefined

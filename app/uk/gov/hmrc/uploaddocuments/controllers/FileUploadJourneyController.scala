@@ -19,7 +19,6 @@ package uk.gov.hmrc.uploaddocuments.controllers
 import akka.actor.{ActorSystem, Scheduler}
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{Configuration, Environment}
 import play.mvc.Http.HeaderNames
@@ -118,17 +117,6 @@ class FileUploadJourneyController @Inject() (
   //                    ACTIONS                    //
   // --------------------------------------------- //
 
-  // POST /initiate-upscan/:uploadId
-  final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
-    whenAuthenticated
-      .applyWithRequest { implicit request =>
-        Transitions
-          .initiateNextFileUpload(uploadId)(upscanRequestWhenUploadingMultipleFiles)(
-            upscanInitiateConnector.initiate(_, _)
-          )
-      }
-      .displayUsing(renderUploadRequestJson(uploadId))
-
   // GET /preview/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
     whenAuthenticated.showCurrentState
@@ -205,7 +193,7 @@ class FileUploadJourneyController @Inject() (
               .getOrElse(context.config.allowedContentTypes),
             context.config.newFileDescription,
             initialFileUploads = fileUploads.files,
-            initiateNextFileUpload = controller.initiateNextFileUpload,
+            initiateNextFileUpload = routes.InitiateUpscanController.initiateNextFileUpload,
             checkFileVerificationStatus = routes.FileVerificationController.checkFileVerificationStatus,
             removeFile = routes.RemoveController.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
@@ -278,34 +266,6 @@ class FileUploadJourneyController @Inject() (
         )
 
       case _ => NotImplemented
-    }
-
-  private def renderUploadRequestJson(
-    uploadId: String
-  ) =
-    Renderer.simple {
-      case s: State.UploadMultipleFiles =>
-        s.fileUploads
-          .findReferenceAndUploadRequestForUploadId(uploadId) match {
-          case Some((reference, uploadRequest)) =>
-            val json =
-              Json.obj(
-                "upscanReference" -> reference,
-                "uploadId"        -> uploadId,
-                "uploadRequest"   -> UploadRequest.formats.writes(uploadRequest)
-              )
-            Ok(json)
-
-          case None => NotFound
-        }
-
-      case _ => Forbidden
-    }
-
-  private def renderFileRemovalStatus =
-    Renderer.simple {
-      case s: State => NoContent
-      case _        => BadRequest
     }
 
   private def streamFileFromUspcan(

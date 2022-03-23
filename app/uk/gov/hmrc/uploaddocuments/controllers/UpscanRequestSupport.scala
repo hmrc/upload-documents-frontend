@@ -27,8 +27,23 @@ trait UpscanRequestSupport {
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
-      callbackUrl = router.callbackFromUpscan(journeyId, nonce),
+      callbackUrl = router.baseInternalCallbackUrl + router.callbackFromUpscan(journeyId, nonce),
       successRedirect = Some(router.successRedirect(journeyId)),
+      errorRedirect = Some(router.errorRedirect(journeyId)),
+      minimumFileSize = Some(1),
+      maximumFileSize = Some(maximumFileSizeBytes.toInt)
+    )
+
+  final def upscanRequestWhenUploadingMultipleFiles(journeyId: String)(
+    nonce: String,
+    maximumFileSizeBytes: Long
+  )(implicit
+    rh: RequestHeader
+  ) =
+    UpscanInitiateRequest(
+      callbackUrl = router.baseInternalCallbackUrl +
+        router.callbackFromUpscan(journeyId, nonce),
+      successRedirect = Some(router.successRedirectWhenUploadingMultipleFiles(journeyId)),
       errorRedirect = Some(router.errorRedirect(journeyId)),
       minimumFileSize = Some(1),
       maximumFileSize = Some(maximumFileSizeBytes.toInt)

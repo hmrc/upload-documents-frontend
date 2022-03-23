@@ -82,7 +82,7 @@ class Renderer @Inject() (
               .getOrElse(context.config.allowedContentTypes),
             context.config.newFileDescription,
             initialFileUploads = fileUploads.files,
-            initiateNextFileUpload = controller.initiateNextFileUpload,
+            initiateNextFileUpload = router.initiateNextFileUpload,
             checkFileVerificationStatus = router.checkFileVerificationStatus,
             removeFile = router.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,

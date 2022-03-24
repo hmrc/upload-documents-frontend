@@ -27,7 +27,7 @@ trait UpscanRequestSupport {
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
-      callbackUrl = router.baseInternalCallbackUrl + router.callbackFromUpscan(journeyId, nonce),
+      callbackUrl = router.callbackFromUpscan(journeyId, nonce),
       successRedirect = Some(router.successRedirect(journeyId)),
       errorRedirect = Some(router.errorRedirect(journeyId)),
       minimumFileSize = Some(1),
@@ -41,8 +41,7 @@ trait UpscanRequestSupport {
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
-      callbackUrl = router.baseInternalCallbackUrl +
-        router.callbackFromUpscan(journeyId, nonce),
+      callbackUrl = router.callbackFromUpscan(journeyId, nonce),
       successRedirect = Some(router.successRedirectWhenUploadingMultipleFiles(journeyId)),
       errorRedirect = Some(router.errorRedirect(journeyId)),
       minimumFileSize = Some(1),

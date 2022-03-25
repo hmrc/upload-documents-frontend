@@ -18,7 +18,7 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -41,12 +41,12 @@ class FilePostedController @Inject() (
       whenInSession {
         Forms.UpscanUploadSuccessForm.bindFromRequest
           .fold(
-            formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+            formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
             s3UploadSuccess => {
               val sessionStateUpdate =
-                FileUploadJourneyModel.Transitions.markUploadAsPosted(s3UploadSuccess)
+                JourneyModel.markUploadAsPosted(s3UploadSuccess)
               sessionStateService
-                .apply(sessionStateUpdate)
+                .updateSessionState(sessionStateUpdate)
                 .map(renderer.acknowledgeFileUploadRedirect)
             }
           )

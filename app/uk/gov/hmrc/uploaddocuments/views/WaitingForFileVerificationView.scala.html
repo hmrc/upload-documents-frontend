@@ -15,7 +15,7 @@
  *@
 
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
-@import uk.gov.hmrc.uploaddocuments.models.CustomizedServiceContent
+@import uk.gov.hmrc.uploaddocuments.models.{CustomizedServiceContent,Features}
 
 @this(
         govukLayout: uk.gov.hmrc.uploaddocuments.views.html.templates.GovukLayoutWrapper,
@@ -24,7 +24,7 @@
         appConfig: AppConfig
 )
 
-@(successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+@(successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages,features:Features, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle("view.upload-file.waiting")(messages, CustomizedServiceContent()),

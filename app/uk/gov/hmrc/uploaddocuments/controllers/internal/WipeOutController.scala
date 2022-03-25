@@ -18,7 +18,7 @@ package uk.gov.hmrc.uploaddocuments.controllers.internal
 
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -36,11 +36,11 @@ class WipeOutController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticatedInBackchannel {
-          val sessionStateUpdate = FileUploadJourneyModel.Transitions.wipeOut
+          val sessionStateUpdate = JourneyModel.wipeOut
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map(_ => NoContent)
-            .andThen { case _ => sessionStateService.cleanBreadcrumbs() }
+            .andThen { case _ => sessionStateService.cleanBreadcrumbs }
         }
       }
     }

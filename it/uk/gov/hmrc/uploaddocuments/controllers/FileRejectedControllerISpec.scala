@@ -1,7 +1,7 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -121,7 +121,7 @@ class FileRejectedControllerISpec extends ControllerISpecBase {
         val result1 =
           await(
             requestWithoutSessionId(
-              s"/journey/${SHA256.compute(journeyId.value)}/file-rejected?key=11370e18-6e24-453e-b45a-76d3e32ea33d&errorCode=ABC123&errorMessage=ABC+123"
+              s"/journey/${SHA256.compute(journeyId)}/file-rejected?key=11370e18-6e24-453e-b45a-76d3e32ea33d&errorCode=ABC123&errorMessage=ABC+123"
             ).get()
           )
 
@@ -161,7 +161,7 @@ class FileRejectedControllerISpec extends ControllerISpecBase {
       "return 201 with access control header" in {
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-rejected")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId)}/file-rejected")
               .options()
           )
         result.status shouldBe 201

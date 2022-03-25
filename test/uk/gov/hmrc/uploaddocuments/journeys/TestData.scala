@@ -20,7 +20,7 @@ import uk.gov.hmrc.uploaddocuments.models._
 import java.time._
 import scala.concurrent.Future
 import uk.gov.hmrc.uploaddocuments.connectors._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.UpscanInitiateApi
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel.UpscanInitiateApi
 
 trait TestData {
 

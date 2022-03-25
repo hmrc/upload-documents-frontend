@@ -18,7 +18,7 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -42,12 +42,12 @@ class FileRejectedController @Inject() (
         whenAuthenticated {
           Forms.UpscanUploadErrorForm.bindFromRequest
             .fold(
-              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
               s3UploadError => {
                 val sessionStateUpdate =
-                  FileUploadJourneyModel.Transitions.markUploadAsRejected(s3UploadError)
+                  JourneyModel.markUploadAsRejected(s3UploadError)
                 sessionStateService
-                  .apply(sessionStateUpdate)
+                  .updateSessionState(sessionStateUpdate)
                   .map(router.redirectTo)
               }
             )
@@ -62,12 +62,12 @@ class FileRejectedController @Inject() (
         whenAuthenticated {
           Forms.UpscanUploadErrorForm.bindFromRequest
             .fold(
-              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
               s3UploadError => {
                 val sessionStateUpdate =
-                  FileUploadJourneyModel.Transitions.markUploadAsRejected(s3UploadError)
+                  JourneyModel.markUploadAsRejected(s3UploadError)
                 sessionStateService
-                  .apply(sessionStateUpdate)
+                  .updateSessionState(sessionStateUpdate)
                   .map(renderer.acknowledgeFileUploadRedirect)
               }
             )
@@ -81,12 +81,12 @@ class FileRejectedController @Inject() (
       whenInSession {
         Forms.UpscanUploadErrorForm.bindFromRequest
           .fold(
-            formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+            formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
             s3UploadError => {
               val sessionStateUpdate =
-                FileUploadJourneyModel.Transitions.markUploadAsRejected(s3UploadError)
+                JourneyModel.markUploadAsRejected(s3UploadError)
               sessionStateService
-                .apply(sessionStateUpdate)
+                .updateSessionState(sessionStateUpdate)
                 .map(renderer.acknowledgeFileUploadRedirect)
             }
           )

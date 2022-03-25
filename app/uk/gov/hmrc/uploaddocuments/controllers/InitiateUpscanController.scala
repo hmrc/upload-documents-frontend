@@ -19,7 +19,7 @@ package uk.gov.hmrc.uploaddocuments.controllers
 import akka.actor.ActorSystem
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.connectors.UpscanInitiateConnector
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -42,12 +42,12 @@ class InitiateUpscanController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions
+            JourneyModel
               .initiateNextFileUpload(uploadId)(upscanRequestWhenUploadingMultipleFiles(currentJourneyId))(
                 upscanInitiateConnector.initiate(_, _)
               )
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map(renderer.renderUploadRequestJson(uploadId))
         }
       }

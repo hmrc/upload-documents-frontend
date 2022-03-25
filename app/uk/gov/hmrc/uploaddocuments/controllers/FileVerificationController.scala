@@ -18,8 +18,8 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.Scheduler
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -51,11 +51,11 @@ class FileVerificationController @Inject() (
           val timeoutNanoTime: Long =
             System.nanoTime() + INITIAL_CALLBACK_WAIT_TIME_SECONDS * 1000000000L
           sessionStateService
-            .waitFor[State.Summary](intervalInMiliseconds, timeoutNanoTime) {
+            .waitForSessionState[State.Summary](intervalInMiliseconds, timeoutNanoTime) {
               val sessionStateUpdate =
-                FileUploadJourneyModel.Transitions.waitForFileVerification
+                JourneyModel.waitForFileVerification
               sessionStateService
-                .apply(sessionStateUpdate)
+                .updateSessionState(sessionStateUpdate)
             }
             .map {
               case (waitingForFileVerification: State.WaitingForFileVerification, breadcrumbs) =>
@@ -73,7 +73,7 @@ class FileVerificationController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          sessionStateService.currentState.map {
+          sessionStateService.currentSessionState.map {
             case Some(sab) =>
               val messages = implicitly[Messages]
               renderer.renderFileVerificationStatus(reference)(messages)(sab)
@@ -92,11 +92,11 @@ class FileVerificationController @Inject() (
         val timeoutNanoTime: Long =
           System.nanoTime() + INITIAL_CALLBACK_WAIT_TIME_SECONDS * 1000000000L
         sessionStateService
-          .waitFor[State.Summary](intervalInMiliseconds, timeoutNanoTime) {
+          .waitForSessionState[State.Summary](intervalInMiliseconds, timeoutNanoTime) {
             val sessionStateUpdate =
-              FileUploadJourneyModel.Transitions.waitForFileVerification
+              JourneyModel.waitForFileVerification
             sessionStateService
-              .apply(sessionStateUpdate)
+              .updateSessionState(sessionStateUpdate)
           }
           .map(renderer.acknowledgeFileUploadRedirect)
       }

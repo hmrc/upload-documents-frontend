@@ -21,20 +21,17 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.uploaddocuments.connectors.{UpscanInitiateRequest, UpscanInitiateResponse}
 import uk.gov.hmrc.uploaddocuments.models._
-import uk.gov.hmrc.uploaddocuments.support.JourneyModelSpec
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.Transitions._
+import uk.gov.hmrc.uploaddocuments.support.BaseJourneySpec
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel._
+import uk.gov.hmrc.uploaddocuments.journeys.State._
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel._
 
 import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 
-class FileUploadJourneyModelSpec
-    extends AnyWordSpec with Matchers with BeforeAndAfterAll with JourneyModelSpec with TestData {
-
-  override val model = FileUploadJourneyModel
+class JourneyModelSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll with BaseJourneySpec with TestData {
 
   val fileUploadContext = FileUploadContext(
     config = FileUploadSessionConfig(

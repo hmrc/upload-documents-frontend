@@ -2,60 +2,59 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.libs.json.Format
 import play.api.libs.ws.{DefaultWSCookie, StandaloneWSRequest}
 import play.api.mvc.{AnyContent, Call, Cookie, Request, Session}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.crypto.PlainText
-import uk.gov.hmrc.http.SessionKeys
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyStateFormats
+import uk.gov.hmrc.http.{HeaderCarrier, SessionId, SessionKeys}
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
-import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, KeyProvider, MongoDBCachedJourneyService}
+import uk.gov.hmrc.uploaddocuments.services.{EncryptedSessionCache, KeyProvider, SessionStateService}
 import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestSessionStateService}
 
 import java.time.ZonedDateTime
 
 trait ControllerISpecBase extends ServerISpec with StateMatchers {
 
-  implicit val journeyId: JourneyId = JourneyId("sadasdjkasdhuqyhwa326176318346674e764764")
+  val journeyId = "sadasdjkasdhuqyhwa326176318346674e764764"
+
+  implicit val hc: HeaderCarrier = HeaderCarrier(sessionId = Some(SessionId(journeyId)))
 
   import play.api.i18n._
   implicit val messages: Messages = MessagesImpl(Lang("en"), app.injector.instanceOf[MessagesApi])
 
-  lazy val sessionStateService = new TestSessionStateService[JourneyId]
-    with FileUploadJourneyService[JourneyId] with MongoDBCachedJourneyService[JourneyId] {
+  lazy val sessionStateService = new TestSessionStateService
+    with SessionStateService with EncryptedSessionCache[State, HeaderCarrier] {
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
     override lazy val cacheRepository = app.injector.instanceOf[CacheRepository]
     lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
 
-    override lazy val keyProviderFromContext: JourneyId => KeyProvider =
+    override lazy val keyProviderFromContext: HeaderCarrier => KeyProvider =
       hc => KeyProvider(keyProvider, None)
 
-    override val stateFormats: Format[model.State] =
-      FileUploadJourneyStateFormats.formats
+    override def getJourneyId(hc: HeaderCarrier): Option[String] =
+      hc.sessionId.map(_.value).map(SHA256.compute)
 
-    override def getJourneyId(journeyId: JourneyId): Option[String] =
-      Some(SHA256.compute(journeyId.value))
   }
 
   final def fakeRequest(cookies: Cookie*)(implicit
-    journeyId: JourneyId
+    hc: HeaderCarrier
   ): Request[AnyContent] =
     fakeRequest("GET", "/", cookies: _*)
 
   final def fakeRequest(method: String, path: String, cookies: Cookie*)(implicit
-    journeyId: JourneyId
+    hc: HeaderCarrier
   ): Request[AnyContent] =
     FakeRequest(Call(method, path))
       .withCookies(cookies: _*)
-      .withSession(SessionKeys.sessionId -> journeyId.value)
+      .withSession(SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse(""))
 
-  final def request(path: String)(implicit journeyId: JourneyId): StandaloneWSRequest = {
+  final def request(path: String)(implicit hc: HeaderCarrier): StandaloneWSRequest = {
     val sessionCookie =
       sessionCookieBaker
-        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> journeyId.value)))
+        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse(""))))
     wsClient
       .url(s"$baseUrl$path")
       .withCookies(
@@ -67,10 +66,10 @@ trait ControllerISpecBase extends ServerISpec with StateMatchers {
       .addHttpHeaders(play.api.http.HeaderNames.USER_AGENT -> "it-test")
   }
 
-  final def backchannelRequest(path: String)(implicit journeyId: JourneyId): StandaloneWSRequest = {
+  final def backchannelRequest(path: String)(implicit hc: HeaderCarrier): StandaloneWSRequest = {
     val sessionCookie =
       sessionCookieBaker
-        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> journeyId.value)))
+        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse(""))))
     wsClient
       .url(s"$backchannelBaseUrl$path")
       .withCookies(
@@ -83,11 +82,11 @@ trait ControllerISpecBase extends ServerISpec with StateMatchers {
   }
 
   final def requestWithCookies(path: String, cookies: (String, String)*)(implicit
-    journeyId: JourneyId
+    hc: HeaderCarrier
   ): StandaloneWSRequest = {
     val sessionCookie =
       sessionCookieBaker
-        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> journeyId.value)))
+        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> hc.sessionId.map(_.value).getOrElse(""))))
 
     wsClient
       .url(s"$baseUrl$path")

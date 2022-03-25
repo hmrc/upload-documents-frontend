@@ -39,7 +39,7 @@ class PreviewController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          sessionStateService.currentState
+          sessionStateService.currentSessionState
             .flatMap {
               case Some((state, _)) =>
                 renderer.streamFileFromUspcan(reference)(state)

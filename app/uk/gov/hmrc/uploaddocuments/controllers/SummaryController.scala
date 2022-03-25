@@ -18,8 +18,8 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.connectors.UpscanInitiateConnector
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -40,9 +40,9 @@ class SummaryController @Inject() (
     Action.async { implicit request =>
       whenInSession {
         whenAuthenticated {
-          val sessionStateUpdate = FileUploadJourneyModel.Transitions.backToSummary
+          val sessionStateUpdate = JourneyModel.backToSummary
           sessionStateService
-            .getOrApply[State.Summary](sessionStateUpdate)
+            .getCurrentOrUpdateSessionState[State.Summary](sessionStateUpdate)
             .map {
               case (summary: State.Summary, breadcrumbs) =>
                 renderer.display(summary, breadcrumbs, None)
@@ -61,14 +61,14 @@ class SummaryController @Inject() (
         whenAuthenticated {
           Forms.YesNoChoiceForm.bindFromRequest
             .fold(
-              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
               choice => {
                 val sessionStateUpdate =
-                  FileUploadJourneyModel.Transitions.submitedUploadAnotherFileChoice(upscanRequest(currentJourneyId))(
+                  JourneyModel.submitedUploadAnotherFileChoice(upscanRequest(currentJourneyId))(
                     upscanInitiateConnector.initiate(_, _)
-                  )(FileUploadJourneyModel.Transitions.continueToHost)(choice)
+                  )(JourneyModel.continueToHost)(choice)
                 sessionStateService
-                  .apply(sessionStateUpdate)
+                  .updateSessionState(sessionStateUpdate)
                   .map(router.redirectTo)
               }
             )

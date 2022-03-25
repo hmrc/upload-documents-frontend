@@ -34,10 +34,10 @@ import akka.actor.PoisonPill
 import java.util.UUID
 import akka.pattern.ExplicitAskSupport
 
-/** Generic short-term journey state store based on hmrc-mongo cache. Internally employs an actor to make writes and
-  * reads sequential per each journeyId.
+/** Generic short-term session data store based on hmrc-mongo cache. Internally employs an actor to make writes and
+  * reads locally-sequential per each sessionId.
   */
-trait JourneyCache[T, C] extends ExplicitAskSupport {
+trait SessionCache[T, C] extends ExplicitAskSupport {
 
   val actorSystem: ActorSystem
   val journeyKey: String
@@ -49,7 +49,7 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
 
   def getJourneyId(implicit requestContext: C): Option[String]
 
-  import JourneyCache._
+  import SessionCache._
 
   private val managerUuid = UUID.randomUUID().toString().takeRight(8)
 
@@ -317,7 +317,7 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
   }
 }
 
-object JourneyCache {
+object SessionCache {
   case object Get
   case object Delete
   case class Store(entity: Any)

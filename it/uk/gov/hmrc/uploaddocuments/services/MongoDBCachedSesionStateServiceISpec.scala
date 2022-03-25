@@ -8,12 +8,14 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.uploaddocuments.models.HostService
 
-class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
+import uk.gov.hmrc.uploaddocuments.journeys.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.IsTransient
 
-  lazy val service: MongoDBCachedFileUploadJourneyService =
-    app.injector.instanceOf[MongoDBCachedFileUploadJourneyService]
+class MongoDBCachedSesionStateServiceISpec extends AppISpec {
 
-  import service.model.{State, Transitions}
+  lazy val service: MongoDBCachedSessionStateService =
+    app.injector.instanceOf[MongoDBCachedSessionStateService]
 
   implicit val hc: HeaderCarrier =
     HeaderCarrier()
@@ -31,9 +33,9 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
   val request =
     FileUploadInitializationRequest(config = fileUploadContext.config, existingFiles = Seq.empty)
 
-  "MongoDBCachedFileUploadJourneyService" should {
+  "MongoDBCachedSessionStateService" should {
     "apply initialize transition" in {
-      await(service.apply(Transitions.initialize(HostService.Any)(request))) shouldBe (
+      await(service.updateSessionState(JourneyModel.initialize(HostService.Any)(request))) shouldBe (
         (
           State.Initialized(fileUploadContext, FileUploads()),
           List(State.Uninitialized)
@@ -42,28 +44,31 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
     }
 
     "keep breadcrumbs when no change in state" in {
-      service.updateBreadcrumbs(
+      Breadcrumbs.updateBreadcrumbs(
         State.Initialized(fileUploadContext, FileUploads()),
         State.Initialized(fileUploadContext, FileUploads()),
-        Nil
+        Nil,
+        (s: State) => s.isInstanceOf[IsTransient]
       ) shouldBe Nil
     }
 
     "update breadcrumbs when new state" in {
-      service.updateBreadcrumbs(
+      Breadcrumbs.updateBreadcrumbs(
         State.Initialized(fileUploadContext, FileUploads()),
         State.ContinueToHost(fileUploadContext, FileUploads()),
-        Nil
+        Nil,
+        (s: State) => s.isInstanceOf[IsTransient]
       ) shouldBe List(
         State.ContinueToHost(fileUploadContext, FileUploads(List()))
       )
     }
 
     "trim breadcrumbs when returning back to the previous state" in {
-      service.updateBreadcrumbs(
+      Breadcrumbs.updateBreadcrumbs(
         State.Initialized(fileUploadContext, FileUploads()),
         State.ContinueToHost(fileUploadContext, FileUploads()),
-        List(State.Initialized(fileUploadContext, FileUploads()))
+        List(State.Initialized(fileUploadContext, FileUploads())),
+        (s: State) => s.isInstanceOf[IsTransient]
       ) shouldBe Nil
     }
   }

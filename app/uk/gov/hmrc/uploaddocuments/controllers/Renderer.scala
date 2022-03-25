@@ -25,7 +25,7 @@ import play.api.mvc._
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.uploaddocuments.connectors._
 import uk.gov.hmrc.uploaddocuments.controllers.Forms._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
@@ -43,7 +43,7 @@ class Renderer @Inject() (
   val actorSystem: ActorSystem
 ) extends FileStream {
 
-  import uk.gov.hmrc.play.fsm.OptionalFormOps._
+  import uk.gov.hmrc.uploaddocuments.support.OptionalFormOps._
 
   final def display(state: State, breadcrumbs: List[State], formWithErrors: Option[Form[_]])(implicit
     request: Request[_],
@@ -97,7 +97,6 @@ class Renderer @Inject() (
         )
 
       case State.UploadSingleFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
-        import context._
         Ok(
           views.uploadSingleFileView(
             maxFileUploadsNumber = context.config.maximumNumberOfFiles,
@@ -114,18 +113,17 @@ class Renderer @Inject() (
             failureAction = router.showChooseSingleFile,
             checkStatusAction = router.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
-          )
+          )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
         )
 
       case State.WaitingForFileVerification(context, reference, _, _, _) =>
-        import context._
         Ok(
           views.waitingForFileVerificationView(
             successAction = router.showSummary,
             failureAction = router.showChooseSingleFile,
             checkStatusAction = router.checkFileVerificationStatus(reference),
             backLink = backlink(breadcrumbs)
-          )
+          )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
         )
 
       case State.Summary(context, fileUploads, _) =>
@@ -149,7 +147,7 @@ class Renderer @Inject() (
               router.previewFileUploadByReference,
               router.removeFileUploadByReference,
               Call("GET", context.config.backlinkUrl)
-            )(implicitly[Request[_]], context.messages, context.config.content)
+            )(implicitly[Request[_]], context.messages, context.config.features, context.config.content)
         )
 
       case _ => NotImplemented
@@ -182,7 +180,7 @@ class Renderer @Inject() (
     reference: String
   )(implicit messages: Messages) =
     resultOf {
-      case s: FileUploadState =>
+      case s: State.FileUploadState =>
         s.fileUploads.files.find(_.reference == reference) match {
           case Some(file) =>
             Ok(
@@ -228,7 +226,7 @@ class Renderer @Inject() (
     reference: String
   ) =
     asyncResultOf {
-      case s: HasFileUploads =>
+      case s: State.HasFileUploads =>
         s.fileUploads.files.find(_.reference == reference) match {
           case Some(file: FileUpload.Accepted) =>
             getFileStream(

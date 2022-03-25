@@ -2,7 +2,7 @@ package uk.gov.hmrc.uploaddocuments.controllers.internal
 
 import play.api.libs.json.{JsString, Json}
 import uk.gov.hmrc.uploaddocuments.controllers.ControllerISpecBase
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 
 import java.time.ZonedDateTime
@@ -35,7 +35,7 @@ class CallbackFromUpscanControllerISpec extends ControllerISpecBase with Externa
         val result =
           await(
             backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId)}/$nonce"
             )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
@@ -125,7 +125,7 @@ class CallbackFromUpscanControllerISpec extends ControllerISpecBase with Externa
         val result =
           await(
             backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId)}/$nonce"
             )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
@@ -211,7 +211,7 @@ class CallbackFromUpscanControllerISpec extends ControllerISpecBase with Externa
         val result =
           await(
             backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId)}/$nonce"
             )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
@@ -289,7 +289,7 @@ class CallbackFromUpscanControllerISpec extends ControllerISpecBase with Externa
         val result =
           await(
             backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId)}/$nonce"
             )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
@@ -351,7 +351,7 @@ class CallbackFromUpscanControllerISpec extends ControllerISpecBase with Externa
         val result =
           await(
             backchannelRequestWithoutSessionId(
-              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/${Nonce.random}"
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId)}/${Nonce.random}"
             )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(

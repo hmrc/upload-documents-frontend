@@ -1,7 +1,7 @@
 package uk.gov.hmrc.uploaddocuments.controllers.internal
 
 import uk.gov.hmrc.uploaddocuments.controllers.ControllerISpecBase
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global

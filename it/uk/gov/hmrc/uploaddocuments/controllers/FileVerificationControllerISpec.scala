@@ -1,6 +1,6 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 
 import java.time.ZonedDateTime
@@ -192,7 +192,7 @@ class FileVerificationControllerISpec extends ControllerISpecBase {
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result1 =
-          await(requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-verification").get())
+          await(requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId)}/file-verification").get())
 
         result1.status shouldBe 202
         result1.body.isEmpty shouldBe true

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.uploaddocuments.models
 
 import play.api.libs.json._
-import uk.gov.hmrc.play.fsm.PlayFsmUtils
+import uk.gov.hmrc.uploaddocuments.support.IdentityUtils
 
 /** Helper trait providing JSON formatter based on the set of enum values. Designed to be mixed in the companion object
   * of the enum type and as typeclass.
@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.fsm.PlayFsmUtils
   */
 trait EnumerationFormats[A] {
 
-  import PlayFsmUtils.identityOf
+  import IdentityUtils.identityOf
 
   /** Set of enum values recognized by the formatter. */
   val values: Set[A]

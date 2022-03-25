@@ -57,7 +57,7 @@ trait AppConfig {
     s"$contactHost/contact/problem_reports_nonjs?newTab=true&service=$contactFormServiceIdentifier&backUrl=$requestUri"
 
   val signOutUrl: String
-  val traceFSM: Boolean = false
+  val trace: Boolean = false
   val timeout: Int
   val countdown: Int
   val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
@@ -75,7 +75,7 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   override val signOutUrl: String = config.getString("urls.signOut")
   override val timeout: Int = config.getInt("session.timeoutSeconds")
   override val countdown: Int = config.getInt("session.countdownInSeconds")
-  override val traceFSM: Boolean = config.getBoolean("trace.fsm")
+  override val trace: Boolean = config.getBoolean("trace")
   override val govukStartUrl: String = config.getString("govuk.start.url")
 
   override val fileUploadResultPushRetryIntervals: Seq[FiniteDuration] =

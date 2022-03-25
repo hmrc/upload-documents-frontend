@@ -18,7 +18,7 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.connectors.{FileUploadResultPushConnector, UpscanInitiateConnector}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -41,11 +41,11 @@ class RemoveController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions.removeFileUploadByReference(reference)(upscanRequest(currentJourneyId))(
+            JourneyModel.removeFileUploadByReference(reference)(upscanRequest(currentJourneyId))(
               upscanInitiateConnector.initiate(_, _)
             )(fileUploadResultPushConnector.push(_))
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map(router.redirectTo)
         }
       }
@@ -57,11 +57,11 @@ class RemoveController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions.removeFileUploadByReference(reference)(upscanRequest(currentJourneyId))(
+            JourneyModel.removeFileUploadByReference(reference)(upscanRequest(currentJourneyId))(
               upscanInitiateConnector.initiate(_, _)
             )(fileUploadResultPushConnector.push(_))
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map { case _ => NoContent }
         }
       }

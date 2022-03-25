@@ -18,8 +18,8 @@ package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.connectors.UpscanInitiateConnector
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -41,10 +41,10 @@ class ChooseSingleFileController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions
+            JourneyModel
               .initiateFileUpload(upscanRequest(currentJourneyId))(upscanInitiateConnector.initiate(_, _))
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map {
               case (uploadSingleFile: State.UploadSingleFile, breadcrumbs) =>
                 renderer.display(uploadSingleFile, breadcrumbs, None)

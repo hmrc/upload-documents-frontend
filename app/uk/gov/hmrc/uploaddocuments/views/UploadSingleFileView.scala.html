@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,UploadRequest,FileUploadError,CustomizedServiceContent}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,UploadRequest,FileUploadError,CustomizedServiceContent,Features}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 
@@ -42,7 +42,7 @@ context: UploadFileViewHelper
   failureAction: Call, 
   checkStatusAction: Call, 
   backLink: Call
-)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+)(implicit request: Request[_], messages: Messages, features: Features, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle(if(fileUploads.isEmpty) "view.upload-file.first.title" else "view.upload-file.next.title", maybeUploadError.isDefined),

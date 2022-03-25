@@ -1,7 +1,7 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.http.HeaderNames
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.support.SHA256
 
@@ -29,7 +29,7 @@ class FilePostedControllerISpec extends ControllerISpecBase {
         val result =
           await(
             requestWithoutSessionId(
-              s"/journey/${SHA256.compute(journeyId.value)}/file-posted?key=11370e18-6e24-453e-b45a-76d3e32ea33d&bucket=foo"
+              s"/journey/${SHA256.compute(journeyId)}/file-posted?key=11370e18-6e24-453e-b45a-76d3e32ea33d&bucket=foo"
             ).get()
           )
 
@@ -54,7 +54,7 @@ class FilePostedControllerISpec extends ControllerISpecBase {
       "return 201 with access control header" in {
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-posted")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId)}/file-posted")
               .options()
           )
         result.status shouldBe 201

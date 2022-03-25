@@ -17,8 +17,8 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -39,9 +39,9 @@ class ContinueToHostController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions.continueToHost
+            JourneyModel.continueToHost
           sessionStateService
-            .getOrApply[State.ContinueToHost](sessionStateUpdate)
+            .getCurrentOrUpdateSessionState[State.ContinueToHost](sessionStateUpdate)
             .map {
               case (continueToHost: State.ContinueToHost, breadcrumbs) =>
                 renderer.display(continueToHost, breadcrumbs, None)
@@ -49,7 +49,7 @@ class ContinueToHostController @Inject() (
               case other =>
                 router.redirectTo(other)
             }
-            .andThen { case _ => sessionStateService.cleanBreadcrumbs() }
+            .andThen { case _ => sessionStateService.cleanBreadcrumbs }
         }
       }
     }
@@ -61,12 +61,12 @@ class ContinueToHostController @Inject() (
         whenAuthenticated {
           Forms.YesNoChoiceForm.bindFromRequest
             .fold(
-              formWithErrors => sessionStateService.currentState.map(router.redirectWithForm(formWithErrors)),
+              formWithErrors => sessionStateService.currentSessionState.map(router.redirectWithForm(formWithErrors)),
               choice => {
                 val sessionStateUpdate =
-                  FileUploadJourneyModel.Transitions.continueWithYesNo(choice)
+                  JourneyModel.continueWithYesNo(choice)
                 sessionStateService
-                  .apply(sessionStateUpdate)
+                  .updateSessionState(sessionStateUpdate)
                   .map(router.redirectTo)
               }
             )

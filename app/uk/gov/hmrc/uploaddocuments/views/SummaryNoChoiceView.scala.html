@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,CustomizedServiceContent}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,CustomizedServiceContent,Features}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.SummaryViewHelper
 
@@ -26,7 +26,7 @@
         context: SummaryViewHelper
 )
 
-@(maxFileUploadsNumber: Int, fileUploads: FileUploads, postAction: Call, previewFileCall: (String,String) => Call, removeFileCall: String => Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+@(maxFileUploadsNumber: Int, fileUploads: FileUploads, postAction: Call, previewFileCall: (String,String) => Call, removeFileCall: String => Call, backLink: Call)(implicit request: Request[_], messages: Messages, features: Features, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle("view.summary.plural.title", fileUploads.acceptedCount)(messages, CustomizedServiceContent()),

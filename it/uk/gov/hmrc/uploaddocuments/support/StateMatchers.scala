@@ -2,7 +2,6 @@ package uk.gov.hmrc.uploaddocuments.support
 
 import org.scalatest.matchers.Matcher
 import org.scalatest.matchers.MatchResult
-import uk.gov.hmrc.play.fsm.PlayFsmUtils
 import scala.io.AnsiColor
 
 trait StateMatchers {
@@ -12,19 +11,20 @@ trait StateMatchers {
       override def apply(obtained: AnyRef): MatchResult =
         if (obtained == expected)
           MatchResult(true, "", s"")
-        else if (PlayFsmUtils.identityOf(obtained) != PlayFsmUtils.identityOf(expected))
+        else if (IdentityUtils.identityOf(obtained) != IdentityUtils.identityOf(expected))
           MatchResult(
             false,
-            s"State ${AnsiColor.CYAN}${PlayFsmUtils.identityOf(
+            s"State ${AnsiColor.CYAN}${IdentityUtils.identityOf(
               expected
-            )}${AnsiColor.RESET} has been expected but got state ${AnsiColor.CYAN}${PlayFsmUtils.identityOf(obtained)}${AnsiColor.RESET}",
+            )}${AnsiColor.RESET} has been expected but got state ${AnsiColor.CYAN}${IdentityUtils
+              .identityOf(obtained)}${AnsiColor.RESET}",
             s""
           )
         else {
           val diff = Diff(obtained, expected)
           MatchResult(
             false,
-            s"Obtained state ${AnsiColor.CYAN}${PlayFsmUtils.identityOf(obtained)}${AnsiColor.RESET} content differs from the expected:\n$diff}",
+            s"Obtained state ${AnsiColor.CYAN}${IdentityUtils.identityOf(obtained)}${AnsiColor.RESET} content differs from the expected:\n$diff}",
             s""
           )
         }

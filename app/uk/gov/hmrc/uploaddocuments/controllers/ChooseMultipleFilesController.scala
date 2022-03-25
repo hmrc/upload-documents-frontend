@@ -17,8 +17,8 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
 import play.api.mvc.{Action, AnyContent}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
 import javax.inject.{Inject, Singleton}
@@ -39,9 +39,9 @@ class ChooseMultipleFilesController @Inject() (
       whenInSession {
         whenAuthenticated {
           val sessionStateUpdate =
-            FileUploadJourneyModel.Transitions.toUploadMultipleFiles(router.preferUploadMultipleFiles)
+            JourneyModel.toUploadMultipleFiles(router.preferUploadMultipleFiles)
           sessionStateService
-            .apply(sessionStateUpdate)
+            .updateSessionState(sessionStateUpdate)
             .map {
               case (uploadMultipleFiles: State.UploadMultipleFiles, breadcrumbs) =>
                 renderer.display(uploadMultipleFiles, breadcrumbs, None)

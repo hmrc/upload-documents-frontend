@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.JsonParseException
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
@@ -43,10 +43,10 @@ class CallbackFromUpscanController @Inject() (
           .flatMap {
             case Some(payload) =>
               val sessionStateUpdate =
-                FileUploadJourneyModel.Transitions
+                JourneyModel
                   .upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))(payload)
               sessionStateService
-                .apply(sessionStateUpdate)
+                .updateSessionState(sessionStateUpdate)
                 .map(_ => NoContent)
 
             case None => BadRequest.asFuture

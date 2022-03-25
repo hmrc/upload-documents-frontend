@@ -19,7 +19,7 @@ package uk.gov.hmrc.uploaddocuments.controllers.internal
 import com.fasterxml.jackson.core.JsonParseException
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.uploaddocuments.controllers.{BaseController, BaseControllerComponents, Renderer}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel
+import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.services.SessionStateService
 
@@ -43,9 +43,9 @@ class InitializeController @Inject() (
             .flatMap {
               case Some(payload) =>
                 val sessionStateUpdate =
-                  FileUploadJourneyModel.Transitions.initialize(HostService.from(request))(payload)
+                  JourneyModel.initialize(HostService.from(request))(payload)
                 sessionStateService
-                  .apply(sessionStateUpdate)
+                  .updateSessionState(sessionStateUpdate)
                   .map(renderer.initializationResponse)
 
               case None => BadRequest.asFuture

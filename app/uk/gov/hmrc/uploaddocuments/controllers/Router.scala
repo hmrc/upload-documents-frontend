@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.uploaddocuments.controllers
 
+import play.api.data.Form
 import play.api.mvc.Results._
 import play.api.mvc._
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
+import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
-import play.api.data.Form
 
 @Singleton
 class Router @Inject() (appConfig: AppConfig) {

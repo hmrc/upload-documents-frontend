@@ -6,7 +6,7 @@ import org.mongodb.scala.{MongoClient, MongoDatabase}
 import play.api.libs.json.{Format, JsError, JsNumber, JsString, JsSuccess, JsValue, Json, Reads, Writes}
 import uk.gov.hmrc.mongo.cache.{CacheItem, DataKey}
 import uk.gov.hmrc.mongo.{CurrentTimestampSupport, MongoComponent}
-import uk.gov.hmrc.play.fsm.{JourneyModel, PersistentJourneyService}
+import uk.gov.hmrc.uploaddocuments.journeys.Transition
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.support.AppISpec
 
@@ -16,16 +16,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-class MongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
+class EncryptedSessionCacheISpec extends EncryptedSessionCacheISpecSetup {
 
   override lazy val cacheRepository: CacheRepository =
     app.injector.instanceOf[CacheRepository]
 
   implicit val context: String = UUID.randomUUID().toString()
 
-  class A
-
-  "MongoDBCachedJourneyService" should {
+  "EncryptedSessionCache" should {
 
     "store and fetch a state" in {
       await(service.setState(1))
@@ -85,16 +83,16 @@ class MongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecS
       ) shouldBe Seq(0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 12, 12, 7, ())
     }
 
-    "propagate TransitionNotAllowed exception" in {
-      a[service.model.TransitionNotAllowed] shouldBe thrownBy {
-        await(service.apply(service.model.notAllowed))
-      }
+    "keep current state if transition not allowed" in {
+      await(service.setState(321))
+      await(service.updateSessionState(notAllowed))
+      await(service.get) shouldBe Some((321, Nil))
     }
 
     "clear cache" in {
       await(service.setState(123))
       await(service.get) shouldBe Some((123, Nil))
-      service.apply(_ + 1)
+      await(service.apply(_ + 1))
       await(service.get) shouldBe Some((124, List(123)))
       await(service.clear)
       await(service.get) shouldBe None
@@ -123,7 +121,7 @@ class MongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecS
 }
 
 /** Tests scenario when cache repository findById returns nothing. */
-class IgnoringMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
+class IgnoringEncryptedSessionCacheISpec extends EncryptedSessionCacheISpecSetup {
 
   override lazy val cacheRepository: CacheRepository =
     new CacheRepository(
@@ -144,7 +142,7 @@ class IgnoringMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServi
 
   implicit val context: String = UUID.randomUUID().toString()
 
-  "ignoring MongoDBCachedJourneyService" should {
+  "ignoring EncryptedSessionCache" should {
 
     "store and fetch a state" in {
       await(service.setState(1))
@@ -204,7 +202,7 @@ class IgnoringMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServi
 }
 
 /** Tests scenario when cache repository findById returns an object missing journeyId key. */
-class ForgetfulMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
+class ForgetfulEncryptedSessionCacheISpec extends EncryptedSessionCacheISpecSetup {
 
   override lazy val cacheRepository: CacheRepository =
     new CacheRepository(
@@ -226,7 +224,7 @@ class ForgetfulMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServ
 
   implicit val context: String = UUID.randomUUID().toString()
 
-  "forgetfull MongoDBCachedJourneyService" should {
+  "forgetfull EncryptedSessionCache" should {
 
     "store and fetch a state" in {
       await(service.setState(1))
@@ -286,7 +284,7 @@ class ForgetfulMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServ
 }
 
 /** Tests scenario when cache repository findById returns an object with invalid entity format. */
-class InvalidMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
+class InvalidEncryptedSessionCacheISpec extends EncryptedSessionCacheISpecSetup {
 
   // Invalid state format
   override val stateFormats: Format[Int] =
@@ -323,7 +321,7 @@ class InvalidMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServic
 
   implicit val context: String = UUID.randomUUID().toString()
 
-  "invalid MongoDBCachedJourneyService" should {
+  "invalid EncryptedSessionCache" should {
 
     "throw an exception at an attempt to store and fetch a state" in {
       an[Exception] shouldBe thrownBy {
@@ -391,7 +389,7 @@ class InvalidMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServic
 }
 
 /** Tests scenario when cache repository findById throws an exception. */
-class BrokenMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyServiceISpecSetup {
+class BrokenEncryptedSessionCacheISpec extends EncryptedSessionCacheISpecSetup {
 
   class BrokenServiceException extends Exception
 
@@ -416,7 +414,7 @@ class BrokenMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyService
 
   implicit val context: String = UUID.randomUUID().toString()
 
-  "broken MongoDBCachedJourneyService" should {
+  "broken EncryptedSessionCache" should {
 
     "throw an exception at an attempt to store and fetch a state" in {
       an[RuntimeException] shouldBe thrownBy {
@@ -483,7 +481,7 @@ class BrokenMongoDBCachedJourneyServiceISpec extends MongoDBCachedJourneyService
 
 }
 
-trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
+trait EncryptedSessionCacheISpecSetup extends AppISpec {
 
   def cacheRepository: CacheRepository
 
@@ -499,42 +497,43 @@ trait MongoDBCachedJourneyServiceISpecSetup extends AppISpec {
   def encrypt(i: Int, is: List[Int])(implicit rc: String): JsValue = service.encrypt(i, is)
 
   // define test service capable of manipulating journey state
-  lazy val service = new PersistentJourneyService[String] with MongoDBCachedJourneyService[String] {
+  def modify(f: Int => Int) =
+    Transition[Int] { case i => Future.successful(f(i)) }
+
+  val notAllowed =
+    Transition[Int] {
+      case i if false => Future.successful(i)
+    }
+  lazy val service = new EncryptedSessionCache[Int, String] {
 
     override val journeyKey: String = "TestJourney"
-    override val model: TestJourneyModel = new TestJourneyModel
 
     override lazy val actorSystem: ActorSystem = app.injector.instanceOf[ActorSystem]
-    override lazy val cacheRepository = MongoDBCachedJourneyServiceISpecSetup.this.cacheRepository
+    override lazy val cacheRepository = EncryptedSessionCacheISpecSetup.this.cacheRepository
     lazy val keyProvider: KeyProvider = KeyProvider(app.injector.instanceOf[Config])
     override lazy val keyProviderFromContext: String => KeyProvider = _ => keyProvider
-    override val stateFormats: Format[model.State] = MongoDBCachedJourneyServiceISpecSetup.this.stateFormats
-
+    override val stateFormats: Format[Int] = EncryptedSessionCacheISpecSetup.this.stateFormats
     override def getJourneyId(journeyId: String): Option[String] = Option(journeyId)
+    override val default: Int = 0
 
-    def apply(f: Int => Int)(implicit rc: String): Future[Int] = super.apply(model.modify(f)).map(_._1)
-    def get(implicit rc: String): Future[Option[StateAndBreadcrumbs]] = currentState
-    def set(stateAndBreadcrumbs: StateAndBreadcrumbs)(implicit rc: String): Future[StateAndBreadcrumbs] =
+    override def updateBreadcrumbs(
+      newState: Int,
+      currentState: Int,
+      currentBreadcrumbs: List[Int]
+    ): List[Int] =
+      if (newState == currentState)
+        currentBreadcrumbs
+      else if (currentBreadcrumbs.nonEmpty && currentBreadcrumbs.head == newState)
+        currentBreadcrumbs.tail
+      else currentState :: currentBreadcrumbs
+
+    def apply(f: Int => Int)(implicit rc: String): Future[Int] = super.updateSessionState(modify(f)).map(_._1)
+    def get(implicit rc: String): Future[Option[(Int, List[Int])]] = currentSessionState
+    def set(stateAndBreadcrumbs: (Int, List[Int]))(implicit rc: String): Future[(Int, List[Int])] =
       super.save(stateAndBreadcrumbs)
-    def getState(implicit rc: String): Future[Option[Int]] = currentState.map(_.map(_._1))
-    def setState(state: model.State)(implicit rc: String): Future[Int] = super.save((state, Nil)).map(_._1)
+    def getState(implicit rc: String): Future[Option[Int]] = currentSessionState.map(_.map(_._1))
+    def setState(state: Int)(implicit rc: String): Future[Int] = super.save((state, Nil)).map(_._1)
 
-  }
-
-  final class TestJourneyModel extends JourneyModel {
-
-    type State = Int
-    override val root: Int = 0
-
-    def modify(f: Int => Int) =
-      Transition { case i =>
-        goto(f(i))
-      }
-
-    val notAllowed =
-      Transition {
-        case i if false => goto(i)
-      }
   }
 
   object SimpleDecimalFormat {

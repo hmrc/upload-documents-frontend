@@ -28,6 +28,8 @@ import uk.gov.hmrc.uploaddocuments.support.CallOps
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc.Results
+import play.api.Logger
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 trait AuthActions extends AuthorisedFunctions with AuthRedirects {
 
@@ -61,9 +63,31 @@ trait AuthActions extends AuthorisedFunctions with AuthRedirects {
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
     authorised(AuthProviders(GovernmentGateway, PrivilegedApplication))
       .retrieve(credentials)(credentials => body((credentials.map(_.providerId), None)))
-      .recover { case e: AuthorisationException => Results.Forbidden }
+      .recover { case e: AuthorisationException =>
+        Logger(getClass).warn(s"Access forbidden because of ${e.getMessage()}")
+        Results.Forbidden
+      }
 
-  def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
+  protected def whenAuthenticated[A](
+    body: => Future[Result]
+  )(implicit request: Request[A], hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
+    authorised(AuthProviders(GovernmentGateway, PrivilegedApplication))
+      .retrieve(credentials)(_ => body)
+      .recover(handleFailure)
+
+  protected def whenAuthenticatedInBackchannel[A](
+    body: => Future[Result]
+  )(implicit request: Request[A], ec: ExecutionContext): Future[Result] = {
+    implicit val hc = HeaderCarrierConverter.fromRequest(request) // required to process Session-ID from the cookie
+    authorised(AuthProviders(GovernmentGateway, PrivilegedApplication))
+      .retrieve(credentials)(_ => body)
+      .recover { case e: AuthorisationException =>
+        Logger(getClass).warn(s"Access forbidden because of ${e.getMessage()}")
+        Results.Forbidden
+      }
+  }
+
+  protected def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
     case e: AuthorisationException =>
       val continueUrl = CallOps.localFriendlyUrl(env, config)(request.uri, request.host)
       toGGLogin(continueUrl)

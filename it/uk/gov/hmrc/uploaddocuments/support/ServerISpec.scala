@@ -7,8 +7,6 @@ import play.api.mvc.SessionCookieBaker
 import uk.gov.hmrc.play.bootstrap.frontend.filters.crypto.SessionCookieCrypto
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
-import java.util.UUID
-
 abstract class ServerISpec extends BaseISpec with GuiceOneServerPerSuite {
 
   override def fakeApplication: Application = appBuilder.build()
@@ -28,8 +26,6 @@ abstract class ServerISpec extends BaseISpec with GuiceOneServerPerSuite {
     val asyncHttpClient = new DefaultAsyncHttpClient(asyncHttpClientConfig)
     new StandaloneAhcWSClient(asyncHttpClient)
   }
-
-  case class JourneyId(value: String = UUID.randomUUID().toString)
 
   val baseUrl: String = s"http://localhost:$port/upload-documents"
   val backchannelBaseUrl: String = s"http://localhost:$port/internal"

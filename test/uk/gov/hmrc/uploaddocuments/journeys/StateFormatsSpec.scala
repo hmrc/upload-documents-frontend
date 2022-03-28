@@ -17,15 +17,14 @@
 package uk.gov.hmrc.uploaddocuments.journeys
 
 import play.api.libs.json.{Format, JsResultException, Json}
-import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.support.{JsonFormatTest, UnitSpec}
 
 import java.time.ZonedDateTime
 
-class FileUploadJourneyStateFormatsSpec extends UnitSpec {
+class StateFormatsSpec extends UnitSpec {
 
-  implicit val formats: Format[State] = FileUploadJourneyStateFormats.formats
+  implicit val formats: Format[State] = StateFormats.formats
   val generatedAt = java.time.LocalDateTime.of(2018, 12, 11, 10, 20, 30)
   val fileUploadSessionConfig =
     FileUploadContext(config = FileUploadSessionConfig(Nonce.random, "/foo", "/bar", "/zoo"))

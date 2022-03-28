@@ -135,7 +135,7 @@ object FileUploadResultPushConnector {
       )
 
     private def filePreviewPathFor(refererence: String, fileName: String): String =
-      uk.gov.hmrc.uploaddocuments.controllers.routes.FileUploadJourneyController
+      uk.gov.hmrc.uploaddocuments.controllers.routes.PreviewController
         .previewFileUploadByReference(refererence, fileName)
         .url
 

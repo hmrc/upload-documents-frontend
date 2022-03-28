@@ -19,58 +19,75 @@ package uk.gov.hmrc.uploaddocuments.services
 import akka.actor.ActorSystem
 import play.api.Logger
 import play.api.libs.json.{Format, JsString, JsValue, Json}
-import uk.gov.hmrc.play.fsm.{PersistentJourneyService, PlayFsmUtils}
+import uk.gov.hmrc.uploaddocuments.journeys.Transition
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
+import uk.gov.hmrc.uploaddocuments.support.IdentityUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.AnsiColor
 
-/** Journey persistence service mixin, stores encrypted serialized state using [[JourneyCache]].
+/** Session state persistence service mixin, stores encrypted serialized state using [[JourneyCache]].
   */
-trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
+trait EncryptedSessionCache[A, C] {
 
+  val journeyKey: String
   val actorSystem: ActorSystem
   val cacheRepository: CacheRepository
-  val stateFormats: Format[model.State]
-  def getJourneyId(context: RequestContext): Option[String]
-  val traceFSM: Boolean = false
-  val keyProviderFromContext: RequestContext => KeyProvider
+  val stateFormats: Format[A]
+  def getJourneyId(context: C): Option[String]
+  val keyProviderFromContext: C => KeyProvider
+  val default: A
+
+  def updateBreadcrumbs(
+    newState: A,
+    currentState: A,
+    currentBreadcrumbs: List[A]
+  ): List[A]
+
+  val trace: Boolean = false
 
   private val self = this
 
-  case class PersistentState(state: model.State, breadcrumbs: List[model.State])
+  case class PersistentState(state: A, breadcrumbs: List[A])
 
-  implicit lazy val formats1: Format[model.State] = stateFormats
+  implicit lazy val formats1: Format[A] = stateFormats
   implicit lazy val formats2: Format[PersistentState] = Json.format[PersistentState]
 
   private val logger = Logger.apply(this.getClass)
 
-  final val cache = new JourneyCache[String, RequestContext] {
+  final val cache = new SessionCache[String, C] {
 
     override lazy val actorSystem: ActorSystem = self.actorSystem
     override lazy val journeyKey: String = self.journeyKey
     override lazy val cacheRepository: CacheRepository = self.cacheRepository
     override lazy val format: Format[String] = implicitly[Format[String]]
 
-    override def getJourneyId(implicit requestContext: RequestContext): Option[String] =
-      self.getJourneyId(requestContext)
+    override def getJourneyId(implicit context: C): Option[String] =
+      self.getJourneyId(context)
   }
 
-  def encrypt(state: model.State, breadcrumbs: List[model.State])(implicit rc: RequestContext): JsValue =
-    JsString(Encryption.encrypt(PersistentState(state, breadcrumbs), keyProviderFromContext(rc)))
+  final def encrypt(state: A, breadcrumbs: List[A])(implicit context: C): JsValue =
+    JsString(Encryption.encrypt(PersistentState(state, breadcrumbs), keyProviderFromContext(context)))
 
-  final override def apply(
-    transition: model.Transition
-  )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
-    val keyProvider = keyProviderFromContext(rc)
+  final def currentSessionState(implicit
+    context: C,
+    ec: ExecutionContext
+  ): Future[Option[(A, List[A])]] =
+    fetch
+
+  final def updateSessionState(
+    transition: Transition[A]
+  )(implicit context: C, ec: ExecutionContext): Future[(A, List[A])] = {
+    val keyProvider = keyProviderFromContext(context)
+    val defaultValue = Encryption.encrypt(PersistentState(default, Nil), keyProvider)
     cache
-      .modify(Encryption.encrypt(PersistentState(model.root, Nil), keyProvider)) { encrypted =>
+      .modify(defaultValue) { encrypted =>
         val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         val (state, breadcrumbs) = (entry.state, entry.breadcrumbs)
         transition.apply
           .applyOrElse(
             state,
-            (_: model.State) => model.fail(model.TransitionNotAllowed(state, breadcrumbs, transition))
+            (_: A) => Future.successful(state)
           )
           .map { endState =>
             Encryption.encrypt(
@@ -85,25 +102,25 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
       .map { encrypted =>
         val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
         val stateAndBreadcrumbs = (entry.state, entry.breadcrumbs)
-        if (traceFSM) {
+        if (trace) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)
           logger.debug(
             s"${AnsiColor.CYAN}Current state: ${Json
-              .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[model.State]))}${AnsiColor.RESET}"
+              .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[A]))}${AnsiColor.RESET}"
           )
           logger.debug(
-            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(PlayFsmUtils.identityOf)}${AnsiColor.RESET}"
+            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(IdentityUtils.identityOf)}${AnsiColor.RESET}"
           )
         }
         stateAndBreadcrumbs
       }
   }
 
-  final override protected def fetch(implicit
-    rc: RequestContext,
+  final def fetch(implicit
+    context: C,
     ec: ExecutionContext
-  ): Future[Option[StateAndBreadcrumbs]] = {
-    val keyProvider = keyProviderFromContext(rc)
+  ): Future[Option[(A, List[A])]] = {
+    val keyProvider = keyProviderFromContext(context)
     cache.fetch
       .map(_.map { encrypted =>
         val entry = Encryption.decrypt[PersistentState](encrypted, keyProvider)
@@ -111,28 +128,38 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
       })
   }
 
-  final override protected def save(
-    stateAndBreadcrumbs: StateAndBreadcrumbs
-  )(implicit rc: RequestContext, ec: ExecutionContext): Future[StateAndBreadcrumbs] = {
-    val keyProvider = keyProviderFromContext(rc)
+  final def save(
+    stateAndBreadcrumbs: (A, List[A])
+  )(implicit context: C, ec: ExecutionContext): Future[(A, List[A])] = {
+    val keyProvider = keyProviderFromContext(context)
     val entry = PersistentState(stateAndBreadcrumbs._1, stateAndBreadcrumbs._2)
     val encrypted = Encryption.encrypt(entry, keyProvider)
     cache
       .save(encrypted)
       .map { _ =>
-        if (traceFSM) {
+        if (trace) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)
           logger.debug(s"${AnsiColor.CYAN}Current state: ${Json
-            .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[model.State]))}${AnsiColor.RESET}")
+            .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[A]))}${AnsiColor.RESET}")
           logger.debug(
-            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(PlayFsmUtils.identityOf)}${AnsiColor.RESET}"
+            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(IdentityUtils.identityOf)}${AnsiColor.RESET}"
           )
         }
         stateAndBreadcrumbs
       }
   }
 
-  final override def clear(implicit rc: RequestContext, ec: ExecutionContext): Future[Unit] =
+  final def clear(implicit context: C, ec: ExecutionContext): Future[Unit] =
     cache.clear()
+
+  final def cleanBreadcrumbs(implicit context: C, ec: ExecutionContext): Future[List[A]] =
+    for {
+      stateAndBreadcrumbsOpt <- fetch
+      breadcrumbs <- stateAndBreadcrumbsOpt match {
+                       case None => Future.successful(Nil)
+                       case Some((state, breadcrumbs)) =>
+                         save((state, Nil)).map(_ => breadcrumbs)
+                     }
+    } yield breadcrumbs
 
 }

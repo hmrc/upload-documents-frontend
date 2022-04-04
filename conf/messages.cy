@@ -119,6 +119,7 @@ view.summary.singular.heading=Rydych wedi uwchlwytho {0} o ddogfennau
 view.summary.plural.title=Rydych wedi uwchlwytho {0} o ddogfennau
 view.summary.plural.heading=Rydych wedi uwchlwytho {0} o ddogfennau
 view.summary.uploadAnotherFile.heading=A hoffech uwchlwytho dogfen arall?
+view.summary.list.singular.heading=Dogfennau rydych wedi’u huwchlwytho
 view.summary.list.heading=Dogfennau rydych wedi’u huwchlwytho
 view.summary.maximum=Gallwch uwchlwytho hyd at {0} ffeil. Er mwyn uwchlwytho rhagor, mae’n rhaid i chi gyflwyno’r ffeiliau hyn yn gyntaf, ac wedyn defnyddio’r gwasanaeth eto.
 form.upload-file.submit=Uwchlwytho

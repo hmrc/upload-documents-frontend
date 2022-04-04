@@ -114,8 +114,8 @@ export class MultiFileUpload extends Component {
 
   public init(): void {
     this.removeAllItems();
-    this.updateButtonVisibility();
     this.createInitialRows();
+    this.updateButtonVisibility();
   }
 
   private createInitialRows(): void {
@@ -371,7 +371,7 @@ export class MultiFileUpload extends Component {
     const nextItem = this.itemList.querySelector(`.${this.classes.waiting}`) as HTMLElement;
 
     if (!nextItem || this.isBusy()) {
-      if (!this.config.showAddAnotherDocumentButton && !this.hasEmptyOrErrorItem()) {
+      if (!this.config.showAddAnotherDocumentButton && !this.hasEmptyOrErrorItem() && this.getItems().length < this.config.maxFiles) {
         this.handleAddItem();
       }
       return;
@@ -541,9 +541,9 @@ export class MultiFileUpload extends Component {
   private updateButtonVisibility(): void {
     const itemCount = this.getItems().length;
 
-    this.toggleRemoveButtons(itemCount > this.config.minFiles);
+    this.toggleRemoveButtons(itemCount >= this.config.minFiles);
     this.toggleAddButton(this.config.showAddAnotherDocumentButton && itemCount < this.config.maxFiles);
-    this.toggleUploadMoreMessage(itemCount === this.config.maxFiles);
+    this.toggleUploadMoreMessage(itemCount === this.config.maxFiles && this.config.maxFiles > 1);
   }
 
   private updateFormStatusVisibility(forceState = undefined) {

@@ -54,8 +54,7 @@ context: UploadFileViewHelper
 )(implicit request: Request[_], messages: Messages, features: Features, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
-  pageTitle = pageTitle("view.upload-multiple-files.title"),
-  backLink = Some(backLink.url)
+  pageTitle = pageTitle("view.upload-multiple-files.title")
 ) {
 
   @*

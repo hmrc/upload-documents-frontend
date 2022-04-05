@@ -80,7 +80,7 @@ None, refresh: Int = 0)(contentBlock: Html)(implicit request: Request[_], messag
 }
 
 @scripts = {
-  <script src='@controllers.routes.Assets.versioned("javascripts/application.min.js")'></script>
+  <script @{CSPNonce.attr} src='@controllers.routes.Assets.versioned("javascripts/application.min.js")'></script>
 }
 
 @beforeContentBlock = {
@@ -92,6 +92,8 @@ None, refresh: Int = 0)(contentBlock: Html)(implicit request: Request[_], messag
   }
   @if(backLink.isDefined) {
     @govukBackLink(BackLink(href = backLink.get, content = Text(messages("site.back")), attributes = Map("id" -> "back-link")))
+  } else {
+    <a class="govuk-back-link" href="#">@messages("site.back")</a>
   }
 }
 
@@ -128,5 +130,6 @@ None, refresh: Int = 0)(contentBlock: Html)(implicit request: Request[_], messag
     userResearchBanner = serviceContent.userResearchBannerUrl.map(url => (UserResearchBanner(url = url))),
     displayHmrcBanner = false
   )),
-  footerBlock = Some(hmrcStandardFooter(accessibilityStatementUrl = serviceContent.accessibilityStatementUrl))
+  footerBlock = Some(hmrcStandardFooter(accessibilityStatementUrl = serviceContent.accessibilityStatementUrl)),
+  cspNonce = CSPNonce.get
 )(content)

@@ -20,18 +20,18 @@ lazy val compileDeps = Seq(
   "uk.gov.hmrc.mongo"            %% "hmrc-mongo-play-28"         % "0.62.0",
   "uk.gov.hmrc"                  %% "crypto"                     % "6.1.0",
   "uk.gov.hmrc"                  %% "play-frontend-hmrc"         % "2.0.0-play-28",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"       % "2.12.5",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"       % "2.12.6",
   "com.sun.mail"                  % "javax.mail"                 % "1.6.2",
   "org.jsoup"                     % "jsoup"                      % "1.14.3"
 )
 
 def testDeps(scope: String) =
   Seq(
-    "org.scalatest"       %% "scalatest"       % "3.2.8"   % scope,
-    "com.vladsch.flexmark" % "flexmark-all"    % "0.36.8"  % scope,
-    "org.scalameta"       %% "munit"           % "0.7.29"  % scope,
-    "org.scalacheck"      %% "scalacheck"      % "1.15.4"  % scope,
-    "org.scalatestplus"   %% "scalacheck-1-15" % "3.2.8.0" % scope
+    "org.scalatest"       %% "scalatest"       % "3.2.11"   % scope,
+    "com.vladsch.flexmark" % "flexmark-all"    % "0.62.2"   % scope,
+    "org.scalameta"       %% "munit"           % "0.7.29"   % scope,
+    "org.scalacheck"      %% "scalacheck"      % "1.15.4"   % scope,
+    "org.scalatestplus"   %% "scalacheck-1-15" % "3.2.11.0" % scope
   )
 
 lazy val itDeps = Seq(

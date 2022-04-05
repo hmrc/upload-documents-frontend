@@ -10,6 +10,8 @@ import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 import uk.gov.hmrc.uploaddocuments.support.AppISpec
 
 import scala.concurrent.Future
+import uk.gov.hmrc.http.Authorization
+import java.util.UUID
 
 class AuthActionsISpec extends AuthActionISpecSetup {
 
@@ -105,7 +107,7 @@ trait AuthActionISpecSetup extends AppISpec {
 
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization(UUID.randomUUID.toString)))
     implicit val request = FakeRequest().withSession(SessionKeys.authToken -> "Bearer XYZ")
 
     def testAuthorizedWithEnrolment[A](serviceName: String, identifierKey: String): Result =

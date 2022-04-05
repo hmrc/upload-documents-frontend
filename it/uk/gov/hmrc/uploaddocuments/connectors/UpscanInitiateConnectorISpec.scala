@@ -7,6 +7,7 @@ import uk.gov.hmrc.http._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.uploaddocuments.stubs.DataStreamStubs
+import java.util.UUID
 
 class UpscanInitiateConnectorISpec extends UpscanInitiateConnectorISpecSetup {
 
@@ -32,7 +33,7 @@ class UpscanInitiateConnectorISpec extends UpscanInitiateConnectorISpecSetup {
 
 trait UpscanInitiateConnectorISpecSetup extends AppISpec with UpscanInitiateStubs with DataStreamStubs {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization(UUID.randomUUID.toString)))
 
   override def fakeApplication: Application = appBuilder.build()
 

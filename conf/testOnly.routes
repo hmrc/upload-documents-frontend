@@ -1,0 +1,7 @@
+#Test Only Routes! Do Not Use in AppConfig Production!!!
+
++ nocsrf
+POST       /testOnly/upscanResponse                 @uk.gov.hmrc.uploaddocuments.controllers.testOnly.HandleUpscanResponsePushNotification.upscanResponse
+
+->         /                                        prod.Routes
+

@@ -11,6 +11,7 @@ import uk.gov.hmrc.uploaddocuments.models.HostService
 import uk.gov.hmrc.uploaddocuments.journeys.State
 import uk.gov.hmrc.uploaddocuments.journeys.JourneyModel
 import uk.gov.hmrc.uploaddocuments.journeys.IsTransient
+import uk.gov.hmrc.http.Authorization
 
 class MongoDBCachedSesionStateServiceISpec extends AppISpec {
 
@@ -18,7 +19,7 @@ class MongoDBCachedSesionStateServiceISpec extends AppISpec {
     app.injector.instanceOf[MongoDBCachedSessionStateService]
 
   implicit val hc: HeaderCarrier =
-    HeaderCarrier()
+    HeaderCarrier(authorization = Some(Authorization(UUID.randomUUID.toString)))
       .withExtraHeaders("FileUploadJourney" -> SHA256.compute(UUID.randomUUID.toString))
 
   val fileUploadContext =

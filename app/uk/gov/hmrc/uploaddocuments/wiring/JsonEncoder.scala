@@ -23,7 +23,6 @@ import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxyUtil}
 import ch.qos.logback.core.encoder.EncoderBase
 import com.fasterxml.jackson.core.JsonGenerator.Feature
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.commons.io.IOUtils._
 import org.apache.commons.lang3.time.FastDateFormat
 import com.typesafe.config.ConfigFactory
 
@@ -43,6 +42,7 @@ class JsonEncoder extends EncoderBase[ILoggingEvent] {
   }
 
   private val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSSZZ"
+  private val LINE_SEPARATOR = "\n"
 
   private lazy val dateFormat = {
     val dformat = Try(ConfigFactory.load().getString("logger.json.dateformat")) match {

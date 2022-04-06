@@ -14,6 +14,7 @@ import java.time.ZonedDateTime
 import play.api.libs.json.Json
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsString
+import java.util.UUID
 
 class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorISpecSetup {
 
@@ -100,7 +101,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
 
 trait FileUploadResultPushConnectorISpecSetup extends AppISpec with ExternalApiStubs {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization(UUID.randomUUID.toString)))
 
   override def fakeApplication: Application = appBuilder.build()
 

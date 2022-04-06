@@ -35,9 +35,6 @@ class FileRejectedControllerISpec extends ControllerISpecBase {
           ).get()
         )
 
-        result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
-        result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
         sessionStateService.getState shouldBe State.UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           "2b72fe99-8adf-4edb-865e-622ae710f77c",
@@ -54,6 +51,10 @@ class FileRejectedControllerISpec extends ControllerISpecBase {
             )
           )
         )
+
+        result.status shouldBe 200
+        result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
+        result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
       }
     }
 

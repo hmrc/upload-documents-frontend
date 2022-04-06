@@ -1,9 +1,8 @@
 import GOVUKFrontend from 'webjars/lib/govuk-frontend/govuk/all.js';
 import HMRCFrontend from 'webjars/lib/hmrc-frontend/hmrc/all.js';
 
-export default function
+export default function init(): void {
 
-  init(): void {
   GOVUKFrontend.initAll();
   HMRCFrontend.initAll();
 
@@ -18,4 +17,15 @@ export default function
         return true;
       });
     });
+
+  Array
+    .from(document.querySelectorAll('.govuk-back-link'))
+    .forEach(element => {
+      element.addEventListener('click', function (event: Event) {
+        event.preventDefault();
+        history.back();
+        return true;
+      });
+    });
+
 }

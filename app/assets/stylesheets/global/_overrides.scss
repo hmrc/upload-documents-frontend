@@ -2,7 +2,7 @@
 
 // Show red border around a focused field with error
 .govuk-input--error {
-  border: $govuk-border-width-form-element-error solid $govuk-error-colour !important;
+  border-color: $govuk-error-colour;
 
   &:focus {
     border-color: $govuk-input-border-colour;
@@ -44,8 +44,8 @@
   }
 }
 
-.case-reference-number{
+.case-reference-number {
   font-family: Monaco, Consolas, "Courier New", "GDS Transport" !important;
   font-size: 1.1rem;
-  
+
 }

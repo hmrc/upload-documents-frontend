@@ -22,9 +22,27 @@ import org.jsoup.Jsoup
 object HtmlCleaner {
 
   final val blockSafelist = new Safelist()
-    .addTags("div", "p", "span", "br", "ol", "ul", "li", "dd", "dl", "dt", "i", "b", "em", "strong")
+    .addTags(
+      "div",
+      "p",
+      "span",
+      "br",
+      "ol",
+      "ul",
+      "li",
+      "dd",
+      "dl",
+      "dt",
+      "i",
+      "b",
+      "em",
+      "strong",
+      "summary",
+      "details"
+    )
     .addAttributes(":all", "class")
     .addAttributes(":all", "id")
+    .addAttributes(":all", "data-module")
 
   final val simpleTextSafelist =
     Safelist.simpleText
